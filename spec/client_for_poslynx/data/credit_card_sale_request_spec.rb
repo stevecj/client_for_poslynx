@@ -150,6 +150,7 @@ XML
 </PLRequest>
 XML
       actual_instance = described_class.xml_deserialize xml_input
+
       expect( actual_instance.merchant_supplied_id        ).to eq( 'the-transaction' )
       expect( actual_instance.client_id                   ).to eq( 'the-client'      )
       expect( actual_instance.client_mac                  ).to eq( 'the-MAC'         )
