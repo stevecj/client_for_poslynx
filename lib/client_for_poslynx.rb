@@ -4,5 +4,9 @@ require "client_for_poslynx/version"
 require "client_for_poslynx/data"
 
 module ClientForPoslynx
-  # Your code goes here...
+
+  class Error < StandardError ; end
+  class InvalidXmlError < Error ; end
+  class InvalidXmlContentError < Error ; end
+
 end
