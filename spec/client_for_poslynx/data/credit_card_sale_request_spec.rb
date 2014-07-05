@@ -4,7 +4,7 @@ module ClientForPoslynx
 
   describe Data::CreditCardSaleRequest do
 
-    it "Serializes to a PLRequest XML document for a CCSALE command" do
+    it "Serializes to a PLRequest XML document for a CCSALE response" do
       expected_xml = <<XML
 <?xml version="1.0"?>
 <PLRequest>
@@ -17,20 +17,17 @@ XML
     end
 
     it "Serializes all assigned members to appropriate elements" do
-      subject.merchant_supplied_id        = 'the-transaction'
-      subject.client_id                   = 'the-client'
-      subject.client_mac                  = 'the-MAC'
-      subject.tax_amount                  = 'the-tax'
-      subject.customer_code               = 'the-code'
-      subject.amount                      = 'the-amount'
-      subject.input_source                = 'the-source'
-      subject.track_1                     = 'the-one'
-      subject.track_2                     = 'the-two'
-      subject.card_number                 = 'the-number'
-      subject.expiry_date                 = 'the-expiration'
-      subject.address_verification_street = 'the-street'
-      subject.address_verification_zip    = 'the-zipcode'
-      subject.card_verification_number    = 'the-cvv'
+      subject.merchant_supplied_id = 'the-transaction'
+      subject.client_id            = 'the-client'
+      subject.client_mac           = 'the-MAC'
+      subject.tax_amount           = 'the-tax'
+      subject.customer_code        = 'the-code'
+      subject.amount               = 'the-amount'
+      subject.input_source         = 'the-source'
+      subject.track_1              = 'the-one'
+      subject.track_2              = 'the-two'
+      subject.card_number          = 'the-number'
+      subject.expiry_date          = 'the-expiration'
 
       expected_xml = <<XML
 <?xml version="1.0"?>
@@ -47,9 +44,6 @@ XML
   <Track1>the-one</Track1>
   <CardNumber>the-number</CardNumber>
   <ExpiryDate>the-expiration</ExpiryDate>
-  <AVSStreet>the-street</AVSStreet>
-  <AVSZip>the-zipcode</AVSZip>
-  <CVV>the-cvv</CVV>
 </PLRequest>
 XML
 
@@ -107,18 +101,6 @@ XML
       }.to raise_exception( InvalidXmlContentError )
     end
 
-    it "raises InvalidXmlContentError deserializing XML with unrecognized property" do
-      xml_input = <<XML
-<PLRequest>
-  <Command>CCSALE</Command>
-  <Wazzat>abc</Wazzat>
-</PLRequest>
-XML
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
 <PLRequest>
@@ -128,6 +110,19 @@ XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.card_number ).to be_nil
     end
+
+    it "keeps a copy of the original XML in the deserialized instance" do
+      xml_input = <<XML
+<PLRequest>
+  <Command>CCSALE</Command>
+  <Result>OK</Result>
+  <SomeOtherThing>Apple</SomeOtherThing>
+</PLRequest>
+XML
+      actual_instance = described_class.xml_deserialize xml_input
+      expect( actual_instance.source_data ).to eq( xml_input )
+    end
+
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML
@@ -144,27 +139,21 @@ XML
   <Track1>the-one</Track1>
   <CardNumber>the-number</CardNumber>
   <ExpiryDate>the-expiration</ExpiryDate>
-  <AVSStreet>the-street</AVSStreet>
-  <AVSZip>the-zipcode</AVSZip>
-  <CVV>the-cvv</CVV>
 </PLRequest>
 XML
       actual_instance = described_class.xml_deserialize xml_input
 
-      expect( actual_instance.merchant_supplied_id        ).to eq( 'the-transaction' )
-      expect( actual_instance.client_id                   ).to eq( 'the-client'      )
-      expect( actual_instance.client_mac                  ).to eq( 'the-MAC'         )
-      expect( actual_instance.tax_amount                  ).to eq( 'the-tax'         )
-      expect( actual_instance.customer_code               ).to eq( 'the-code'        )
-      expect( actual_instance.amount                      ).to eq( 'the-amount'      )
-      expect( actual_instance.input_source                ).to eq( 'the-source'      )
-      expect( actual_instance.track_1                     ).to eq( 'the-one'         )
-      expect( actual_instance.track_2                     ).to eq( 'the-two'         )
-      expect( actual_instance.card_number                 ).to eq( 'the-number'      )
-      expect( actual_instance.expiry_date                 ).to eq( 'the-expiration'  )
-      expect( actual_instance.address_verification_street ).to eq( 'the-street'      )
-      expect( actual_instance.address_verification_zip    ).to eq( 'the-zipcode'     )
-      expect( actual_instance.card_verification_number    ).to eq( 'the-cvv'         )
+      expect( actual_instance.merchant_supplied_id ).to eq( 'the-transaction' )
+      expect( actual_instance.client_id            ).to eq( 'the-client'      )
+      expect( actual_instance.client_mac           ).to eq( 'the-MAC'         )
+      expect( actual_instance.tax_amount           ).to eq( 'the-tax'         )
+      expect( actual_instance.customer_code        ).to eq( 'the-code'        )
+      expect( actual_instance.amount               ).to eq( 'the-amount'      )
+      expect( actual_instance.input_source         ).to eq( 'the-source'      )
+      expect( actual_instance.track_1              ).to eq( 'the-one'         )
+      expect( actual_instance.track_2              ).to eq( 'the-two'         )
+      expect( actual_instance.card_number          ).to eq( 'the-number'      )
+      expect( actual_instance.expiry_date          ).to eq( 'the-expiration'  )
     end
   end
 

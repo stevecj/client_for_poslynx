@@ -5,23 +5,27 @@ require 'nokogiri'
 module ClientForPoslynx
   module Data
 
-    class CreditCardSaleRequest
+    class CreditCardSaleResponse
       DEFINING_ELEMENT_MAPPINGS = [
         { attribute: :command, element: 'Command' },
       ]
 
       ATTR_ELEMENT_MAPPINGS = [
-        { attribute: :merchant_supplied_id, element: 'Id'           },
-        { attribute: :client_id,            element: 'ClientId'     },
-        { attribute: :client_mac,           element: 'ClientMAC'    },
-        { attribute: :tax_amount,           element: 'TaxAmount'    },
-        { attribute: :customer_code,        element: 'CustomerCode' },
-        { attribute: :amount,               element: 'Amount'       },
-        { attribute: :input_source,         element: 'Input'        },
-        { attribute: :track_2,              element: 'Track2'       },
-        { attribute: :track_1,              element: 'Track1'       },
-        { attribute: :card_number,          element: 'CardNumber'   },
-        { attribute: :expiry_date,          element: 'ExpiryDate'   },
+        { attribute: :result,                   element: 'Result'          },
+        { attribute: :result_text,              element: 'ResultText'      },
+        { attribute: :processor_authorization,  element: 'Authorization'   },
+        { attribute: :record_number,            element: 'RecNum'          },
+        { attribute: :reference_data,           element: 'RefData'         },
+        { attribute: :error_code,               element: 'ErrorCode'       },
+        { attribute: :merchant_supplied_id,     element: 'Id'              },
+        { attribute: :client_id,                element: 'ClientId'        },
+        { attribute: :card_type,                element: 'CardType'        },
+        { attribute: :authorized_amount,        element: 'AuthAmt'         },
+        { attribute: :card_number_last_4,       element: 'CardNumber'      },
+        { attribute: :merchant_id,              element: 'MerchantId'      },
+        { attribute: :terminal_id,              element: 'TerminalId'      },
+        { attribute: :transaction_date,         element: 'TransactionDate' },
+        { attribute: :transaction_time,         element: 'TransactionTime' },
       ]
 
       def self.defining_element_mappings
@@ -59,8 +63,8 @@ module ClientForPoslynx
         end
 
         def xml_doc_root(doc)
-          root = doc.at_xpath('/PLRequest')
-          raise InvalidXmlContentError, "PLRequest root element not found" unless root
+          root = doc.at_xpath('/PLResponse')
+          raise InvalidXmlContentError, "PLResponse root element not found" unless root
           root
         end
 
@@ -103,16 +107,12 @@ module ClientForPoslynx
         'CCSALE'
       end
 
-      def initialize
-        self.client_mac = Data::DEFAULT_CLIENT_MAC
-      end
-
       attr_accessor :source_data
       attr_accessor *attr_element_mappings.map{ |ae| ae[:attribute] }
 
       def xml_serialize
         doc = Nokogiri::XML::Document.new
-        root = doc.create_element('PLRequest')
+        root = doc.create_element('PLResponse')
         self.class.defining_element_mappings.each do |ae|
           content = self.class.public_send( ae[:attribute] )
           next unless content
