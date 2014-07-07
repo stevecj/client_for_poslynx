@@ -10,9 +10,10 @@ module ClientForPoslynx
       class << self
 
         def xml_deserialize(xml)
-          property_values = PropertiesXmlParser.parse(root_element_name, xml)
-          instance = load_from_properties property_values
-          instance.source_data = xml
+          doc = XmlDocument.new(xml)
+          raise InvalidXmlContentError, "#{root_element_name} root element not found" unless doc.root_name == root_element_name
+          instance = load_from_properties doc.property_element_values
+          instance.source_data = doc.source_xml
           instance
         end
 

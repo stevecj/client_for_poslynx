@@ -7,9 +7,9 @@ module ClientForPoslynx
     it "Serializes to a PLResponse XML document for a CCSALE response" do
       expected_xml = <<XML
 <?xml version="1.0"?>
-<#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
   <Command>CCSALE</Command>
-</#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -34,7 +34,7 @@ XML
 
       expected_xml = <<XML
 <?xml version="1.0"?>
-<#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
   <Command>CCSALE</Command>
   <Result>the-result</Result>
   <ResultText>the-result-text</ResultText>
@@ -51,7 +51,7 @@ XML
   <TerminalId>the-terminal</TerminalId>
   <TransactionDate>the-date</TransactionDate>
   <TransactionTime>the-time</TransactionTime>
-</#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -76,11 +76,11 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
   <Command>CCSALE</Command>
   <Result>OK</Result>
   <Result>Sure</Result>
-</#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -89,8 +89,8 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_NAME}>
-</#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -99,9 +99,9 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
   <Command>DOSOMETHING</Command>
-</#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -110,9 +110,9 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
   <Command>CCSALE</Command>
-</#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.authorized_amount ).to be_nil
@@ -120,11 +120,11 @@ XML
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
   <Command>CCSALE</Command>
   <Result>OK</Result>
   <SomeOtherThing>Apple</SomeOtherThing>
-</#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )
@@ -132,7 +132,7 @@ XML
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_NAME}>
+<#{Data::Responses::ROOT_ELEMENT_NAME}>
   <Command>CCSALE</Command>
   <Result>the-result</Result>
   <ResultText>the-result-text</ResultText>
@@ -149,7 +149,7 @@ XML
   <TerminalId>the-terminal</TerminalId>
   <TransactionDate>the-date</TransactionDate>
   <TransactionTime>the-time</TransactionTime>
-</#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_ELEMENT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
 
