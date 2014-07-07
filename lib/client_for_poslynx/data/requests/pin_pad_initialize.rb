@@ -6,7 +6,7 @@ module ClientForPoslynx
   module Data
     module Requests
 
-      class PinPadReset < AbstractData
+      class PinPadInitialize < AbstractData
         defining_element_value attribute: :command, element: 'Command', value: 'PPINIT'
 
         attr_element_mapping attribute: :client_mac,  element: 'ClientMAC'

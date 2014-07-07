@@ -4,7 +4,7 @@ module ClientForPoslynx
 
   describe Data::Responses::CreditCardSale do
 
-    it "Serializes to a PLResponse XML document for a CCSALE command" do
+    it "Serializes to a PLResponse XML document for a CCSALE response" do
       expected_xml = <<XML
 <?xml version="1.0"?>
 <PLResponse>

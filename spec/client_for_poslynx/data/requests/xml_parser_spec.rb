@@ -20,7 +20,7 @@ XML
       expect( actual_request_data.card_number          ).to eq( 'the-number'      )
     end
 
-    it "Returns a populated instance of PinPadInitialize for PPIINIT command XML" do
+    it "Returns a populated instance of PinPadInitialize for PPINIT command XML" do
       xml_input = <<XML
 <PLRequest>
   <Command>PPINIT</Command>

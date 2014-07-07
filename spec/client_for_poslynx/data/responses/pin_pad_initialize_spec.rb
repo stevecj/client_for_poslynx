@@ -2,31 +2,32 @@ require 'spec_helper'
 
 module ClientForPoslynx
 
-  describe Data::Requests::PinPadInitialize do
+  describe Data::Responses::PinPadInitialize do
 
-    it "Serializes to a PLRequest XML document for a CCSALE request" do
+    it "Serializes to a PLResponse XML document for a PPINIT response" do
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLRequest>
+<PLResponse>
   <Command>PPINIT</Command>
-  <ClientMAC>#{Data::DEFAULT_CLIENT_MAC}</ClientMAC>
-</PLRequest>
+</PLResponse>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
 
     it "Serializes all assigned members to appropriate elements" do
-      subject.client_mac  = 'the-mac'
-      subject.idle_prompt = 'the-prompt'
+      subject.result = 'the-result'
+      subject.result_text = 'the-text'
+      subject.error_code = 'the-code'
 
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLRequest>
+<PLResponse>
   <Command>PPINIT</Command>
-  <ClientMAC>the-mac</ClientMAC>
-  <IdlePrompt>the-prompt</IdlePrompt>
-</PLRequest>
+  <Result>the-result</Result>
+  <ResultText>the-text</ResultText>
+  <ErrorCode>the-code</ErrorCode>
+</PLResponse>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -41,7 +42,7 @@ XML
     it "raises InvalidXmlContentError deserializing XML with wrong root" do
       xml_input = <<XML
 <PLAppeal>
-  <Command>CCSALE</Command>
+  <Command>PPINIT</Command>
 </PLAppeal>
 XML
       expect {
@@ -51,11 +52,11 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<PLRequest>
-  <Command>CCSALE</Command>
-  <IdlePrompt>1</IdlePrompt>
-  <IdlePrompt>2</IdlePrompt>
-</PLRequest>
+<PLResponse>
+  <Command>PPINIT</Command>
+  <Response>1</Response>
+  <Response>2</Response>
+</PLResponse>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -64,8 +65,8 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
-<PLRequest>
-</PLRequest>
+<PLResponse>
+</PLResponse>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -74,9 +75,9 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<XML
-<PLRequest>
+<PLResponse>
   <Command>DOSOMETHING</Command>
-</PLRequest>
+</PLResponse>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -85,20 +86,20 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<PLRequest>
+<PLResponse>
   <Command>PPINIT</Command>
-</PLRequest>
+</PLResponse>
 XML
       actual_instance = described_class.xml_deserialize xml_input
-      expect( actual_instance.idle_prompt ).to be_nil
+      expect( actual_instance.result ).to be_nil
     end
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<PLRequest>
+<PLResponse>
   <Command>PPINIT</Command>
   <SomeOtherThing>Apple</SomeOtherThing>
-</PLRequest>
+</PLResponse>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )
@@ -106,16 +107,18 @@ XML
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML
-<PLRequest>
+<PLResponse>
   <Command>PPINIT</Command>
-  <ClientMAC>the-MAC</ClientMAC>
-  <IdlePrompt>the-prompt</IdlePrompt>
-</PLRequest>
+  <Result>the-result</Result>
+  <ResultText>the-text</ResultText>
+  <ErrorCode>the-code</ErrorCode>
+</PLResponse>
 XML
       actual_instance = described_class.xml_deserialize xml_input
 
-      expect( actual_instance.client_mac  ).to eq( 'the-MAC'    )
-      expect( actual_instance.idle_prompt ).to eq( 'the-prompt' )
+      expect( actual_instance.result      ).to eq( 'the-result' )
+      expect( actual_instance.result_text ).to eq( 'the-text'   )
+      expect( actual_instance.error_code  ).to eq( 'the-code'   )
     end
 
   end
