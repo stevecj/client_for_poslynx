@@ -9,6 +9,18 @@ module ClientForPoslynx
 
       class << self
 
+        def xml_parse(source_xml)
+          doc = XmlDocument.new( source_xml )
+          concrete_data_classes = descendants.
+            reject{ |d| d.name =~ /\bAbstract[A-Z]\w*$/ }.
+            sort_by{ |d| -d.ancestors.length }
+          data_class = concrete_data_classes.detect{ |dc|
+            dc.root_element_name == doc.root_name &&
+            dc.fits_properties?( doc.property_element_values )
+          }
+          data_class.xml_deserialize(source_xml)
+        end
+
         def xml_deserialize(xml)
           doc = XmlDocument.new(xml)
           raise InvalidXmlContentError, "#{root_element_name} root element not found" unless doc.root_name == root_element_name
@@ -49,6 +61,14 @@ module ClientForPoslynx
         end
 
         private
+
+        def inherited(descendant)
+          descendants << descendant
+        end
+
+        def descendants
+          @@descendants ||= []
+        end
 
         def defining_element_value(options)
           attribute = options.fetch( :attribute )
