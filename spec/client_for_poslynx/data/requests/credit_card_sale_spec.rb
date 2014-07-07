@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module ClientForPoslynx
 
-  describe Data::CreditCardSaleRequest do
+  describe Data::Requests::CreditCardSale do
 
     it "Serializes to a PLRequest XML document for a CCSALE response" do
       expected_xml = <<XML

@@ -10,13 +10,23 @@ module ClientForPoslynx
       class << self
 
         def xml_deserialize(xml)
-          property_values = parse_properties_from_xml(xml)
+          property_values = PropertiesXmlParser.parse(root_element_name, xml)
+          instance = load_from_properties property_values
+          instance.source_data = xml
+          instance
+        end
+
+        def load_from_properties(property_values)
           verify_defining_properties property_values
           variable_property_values = variable_property_values(property_values)
           instance = new
-          instance.source_data = xml
-          populate_instance_from_xml_properties instance, variable_property_values
+          populate_instance_from_properties instance, variable_property_values
           instance
+        end
+
+        def fits_properties?(property_values)
+          unmatched = unmatched_defining_properties( property_values )
+          unmatched.empty?
         end
 
         def defining_element_mappings
@@ -44,53 +54,25 @@ module ClientForPoslynx
           attr_element_mappings << options
         end
 
-        def parse_properties_from_xml(xml)
-          doc = parse_xml(xml)
-          root = xml_doc_root(doc)
-          property_element_values(root)
-        end
-
-        def parse_xml(xml)
-          Nokogiri::XML::Document.parse(
-            xml,
-            nil, nil,
-            Nokogiri::XML::ParseOptions::DEFAULT_XML & ~Nokogiri::XML::ParseOptions::RECOVER
-          )
-        rescue Nokogiri::XML::SyntaxError => e
-          raise InvalidXmlError
-        end
-
-        def xml_doc_root(doc)
-          root = doc.at_xpath("/#{root_element_name}")
-          raise InvalidXmlContentError, "PLRequest root element not found" unless root
-          root
-        end
-
-        def property_element_values(root)
-          all_property_texts = root.xpath('./*')
-            .group_by{ |el| el.name }
-            .map{ |name, els| [name, els.map(&:text)] }
-          repeated_properties = all_property_texts
-            .select{ |name, texts| texts.length > 1 }
-            .map(&:first)
-          unless repeated_properties.empty?
-            raise InvalidXmlContentError,
-              "Received multiple instances of property element(s) #{repeated_properties * ', '}"
-          end
-          Hash[
-            all_property_texts.map{ |name, texts| [name, texts.first] }
-          ]
-        end
-
         def verify_defining_properties(property_values)
+          unmatched = unmatched_defining_properties(property_values)
+          return if unmatched.empty?
+          message = unmatched.map{ |mapping|
+            attribute, el_name = mapping.values_at(:attribute, :element)
+            defining_value = public_send(attribute)
+            "#{el_name} child element with \"#{defining_value}\" value not found."
+          }.join( ' ' )
+          raise InvalidXmlContentError, message
+        end
+
+        def unmatched_defining_properties(property_values)
+          unmatched = []
           defining_element_mappings.each do |mapping|
             attribute, el_name = mapping.values_at(:attribute, :element)
             defining_value = public_send(attribute)
-            unless property_values[el_name] == defining_value
-              raise InvalidXmlContentError,
-                "#{el_name} child element with \"#{defining_value}\" value not found"
-            end
+            unmatched << mapping unless property_values[el_name] == defining_value
           end
+          unmatched
         end
 
         def variable_property_values(property_values)
@@ -98,7 +80,7 @@ module ClientForPoslynx
           property_values.reject{ |name, text| defining_element_names.include?(name) }
         end
 
-        def populate_instance_from_xml_properties instance, variable_property_values
+        def populate_instance_from_properties instance, variable_property_values
           variable_property_values.each do |name, text|
             mapping = attr_element_mappings.detect{ |mapping| mapping[:element] == name }
             next unless mapping
