@@ -7,9 +7,9 @@ module ClientForPoslynx
     it "Serializes to a PLResponse XML document for a CCSALE response" do
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>CCSALE</Command>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -18,10 +18,10 @@ XML
     it "Serializes all assigned members to appropriate elements" do
       subject.result                  = 'the-result'
       subject.result_text             = 'the-result-text'
+      subject.error_code              = 'the-error-code'
       subject.processor_authorization = 'the-authorization'
       subject.record_number           = 'the-record'
       subject.reference_data          = 'the-reference-data'
-      subject.error_code              = 'the-error-code'
       subject.merchant_supplied_id    = 'the-transaction'
       subject.client_id               = 'the-client'
       subject.card_type               = 'the-card-type'
@@ -34,14 +34,14 @@ XML
 
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>CCSALE</Command>
   <Result>the-result</Result>
   <ResultText>the-result-text</ResultText>
+  <ErrorCode>the-error-code</ErrorCode>
   <Authorization>the-authorization</Authorization>
   <RecNum>the-record</RecNum>
   <RefData>the-reference-data</RefData>
-  <ErrorCode>the-error-code</ErrorCode>
   <Id>the-transaction</Id>
   <ClientId>the-client</ClientId>
   <CardType>the-card-type</CardType>
@@ -51,7 +51,7 @@ XML
   <TerminalId>the-terminal</TerminalId>
   <TransactionDate>the-date</TransactionDate>
   <TransactionTime>the-time</TransactionTime>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -76,11 +76,11 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>CCSALE</Command>
   <Result>OK</Result>
   <Result>Sure</Result>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -89,8 +89,8 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
-<PLResponse>
-</PLResponse>
+<#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -99,9 +99,9 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>DOSOMETHING</Command>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -110,9 +110,9 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>CCSALE</Command>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.authorized_amount ).to be_nil
@@ -120,11 +120,11 @@ XML
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>CCSALE</Command>
   <Result>OK</Result>
   <SomeOtherThing>Apple</SomeOtherThing>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )
@@ -132,14 +132,14 @@ XML
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>CCSALE</Command>
   <Result>the-result</Result>
   <ResultText>the-result-text</ResultText>
+  <ErrorCode>the-error-code</ErrorCode>
   <Authorization>the-authorization</Authorization>
   <RecNum>the-record</RecNum>
   <RefData>the-reference-data</RefData>
-  <ErrorCode>the-error-code</ErrorCode>
   <Id>the-transaction</Id>
   <ClientId>the-client</ClientId>
   <CardType>the-card-type</CardType>
@@ -149,16 +149,16 @@ XML
   <TerminalId>the-terminal</TerminalId>
   <TransactionDate>the-date</TransactionDate>
   <TransactionTime>the-time</TransactionTime>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
 
       expect( actual_instance.result                  ).to eq( 'the-result'            )
       expect( actual_instance.result_text             ).to eq( 'the-result-text'       )
+      expect( actual_instance.error_code              ).to eq( 'the-error-code'        )
       expect( actual_instance.processor_authorization ).to eq( 'the-authorization'     )
       expect( actual_instance.record_number           ).to eq( 'the-record'            )
       expect( actual_instance.reference_data          ).to eq( 'the-reference-data'    )
-      expect( actual_instance.error_code              ).to eq( 'the-error-code'        )
       expect( actual_instance.merchant_supplied_id    ).to eq( 'the-transaction'       )
       expect( actual_instance.client_id               ).to eq( 'the-client'            )
       expect( actual_instance.card_type               ).to eq( 'the-card-type'         )

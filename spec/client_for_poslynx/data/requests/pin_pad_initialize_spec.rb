@@ -7,10 +7,10 @@ module ClientForPoslynx
     it "Serializes to a PLRequest XML document for a CCSALE request" do
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>PPINIT</Command>
-  <ClientMAC>#{Data::DEFAULT_CLIENT_MAC}</ClientMAC>
-</PLRequest>
+  <ClientMAC>#{Data::Requests::DEFAULT_CLIENT_MAC}</ClientMAC>
+</#{Data::Requests::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -22,11 +22,11 @@ XML
 
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>PPINIT</Command>
   <ClientMAC>the-mac</ClientMAC>
   <IdlePrompt>the-prompt</IdlePrompt>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -40,9 +40,9 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with wrong root" do
       xml_input = <<XML
-<PLAppeal>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
-</PLAppeal>
+</#{Data::Requests::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -51,11 +51,11 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
   <IdlePrompt>1</IdlePrompt>
   <IdlePrompt>2</IdlePrompt>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -64,8 +64,8 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
-<PLRequest>
-</PLRequest>
+<#{Data::Requests::ROOT_NAME}>
+</#{Data::Requests::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -74,9 +74,9 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>DOSOMETHING</Command>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -85,9 +85,9 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>PPINIT</Command>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.idle_prompt ).to be_nil
@@ -95,10 +95,10 @@ XML
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>PPINIT</Command>
   <SomeOtherThing>Apple</SomeOtherThing>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )
@@ -106,11 +106,11 @@ XML
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>PPINIT</Command>
   <ClientMAC>the-MAC</ClientMAC>
   <IdlePrompt>the-prompt</IdlePrompt>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
 

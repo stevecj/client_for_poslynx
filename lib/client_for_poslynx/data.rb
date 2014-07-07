@@ -5,7 +5,9 @@ require_relative "data/requests"
 require_relative "data/responses"
 
 module ClientForPoslynx
+
   module Data
-    DEFAULT_CLIENT_MAC = 'F' * 12
+
   end
+
 end

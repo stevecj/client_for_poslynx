@@ -6,12 +6,12 @@ module ClientForPoslynx
 
     it "Returns a populated instance of CreditCardSaleRequest for CCSALE command XML" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
   <Id>the-transaction</Id>
   <Amount>the-amount</Amount>
   <CardNumber>the-number</CardNumber>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_request_data = subject.xml_parse( xml_input )
 
@@ -22,10 +22,10 @@ XML
 
     it "Returns a populated instance of PinPadInitialize for PPINIT command XML" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>PPINIT</Command>
   <IdlePrompt>the-prompt</IdlePrompt>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_request_data = subject.xml_parse( xml_input )
 

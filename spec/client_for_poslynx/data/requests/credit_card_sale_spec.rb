@@ -4,22 +4,22 @@ module ClientForPoslynx
 
   describe Data::Requests::CreditCardSale do
 
-    it "Serializes to a PLRequest XML document for a CCSALE request" do
+    it "Serializes to a request XML document for a CCSALE request" do
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
-  <ClientMAC>#{Data::DEFAULT_CLIENT_MAC}</ClientMAC>
-</PLRequest>
+  <ClientMAC>#{Data::Requests::DEFAULT_CLIENT_MAC}</ClientMAC>
+</#{Data::Requests::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
 
     it "Serializes all assigned members to appropriate elements" do
+      subject.client_mac           = 'the-MAC'
       subject.merchant_supplied_id = 'the-transaction'
       subject.client_id            = 'the-client'
-      subject.client_mac           = 'the-MAC'
       subject.tax_amount           = 'the-tax'
       subject.customer_code        = 'the-code'
       subject.amount               = 'the-amount'
@@ -31,11 +31,11 @@ XML
 
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
+  <ClientMAC>the-MAC</ClientMAC>
   <Id>the-transaction</Id>
   <ClientId>the-client</ClientId>
-  <ClientMAC>the-MAC</ClientMAC>
   <TaxAmount>the-tax</TaxAmount>
   <CustomerCode>the-code</CustomerCode>
   <Amount>the-amount</Amount>
@@ -44,7 +44,7 @@ XML
   <Track1>the-one</Track1>
   <CardNumber>the-number</CardNumber>
   <ExpiryDate>the-expiration</ExpiryDate>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -69,11 +69,11 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
   <Amount>1</Amount>
   <Amount>2</Amount>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -82,8 +82,8 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
-<PLRequest>
-</PLRequest>
+<#{Data::Requests::ROOT_NAME}>
+</#{Data::Requests::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -92,9 +92,9 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>DOSOMETHING</Command>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -103,9 +103,9 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.card_number ).to be_nil
@@ -113,11 +113,11 @@ XML
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
   <Result>OK</Result>
   <SomeOtherThing>Apple</SomeOtherThing>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )
@@ -126,11 +126,11 @@ XML
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML
-<PLRequest>
+<#{Data::Requests::ROOT_NAME}>
   <Command>CCSALE</Command>
+  <ClientMAC>the-MAC</ClientMAC>
   <Id>the-transaction</Id>
   <ClientId>the-client</ClientId>
-  <ClientMAC>the-MAC</ClientMAC>
   <TaxAmount>the-tax</TaxAmount>
   <CustomerCode>the-code</CustomerCode>
   <Amount>the-amount</Amount>
@@ -139,13 +139,13 @@ XML
   <Track1>the-one</Track1>
   <CardNumber>the-number</CardNumber>
   <ExpiryDate>the-expiration</ExpiryDate>
-</PLRequest>
+</#{Data::Requests::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
 
+      expect( actual_instance.client_mac           ).to eq( 'the-MAC'         )
       expect( actual_instance.merchant_supplied_id ).to eq( 'the-transaction' )
       expect( actual_instance.client_id            ).to eq( 'the-client'      )
-      expect( actual_instance.client_mac           ).to eq( 'the-MAC'         )
       expect( actual_instance.tax_amount           ).to eq( 'the-tax'         )
       expect( actual_instance.customer_code        ).to eq( 'the-code'        )
       expect( actual_instance.amount               ).to eq( 'the-amount'      )

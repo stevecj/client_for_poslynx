@@ -30,11 +30,21 @@ module ClientForPoslynx
         end
 
         def defining_element_mappings
-          @defining_element_mappings ||= []
+          @defining_element_mappings ||=
+            begin
+              self == AbstractData ?
+                [] :
+                superclass.defining_element_mappings + []
+            end
         end
 
         def attr_element_mappings
-          @attr_element_mappings ||= []
+          @attr_element_mappings ||=
+            begin
+              self == AbstractData ?
+                [] :
+                superclass.attr_element_mappings + []
+            end
         end
 
         private

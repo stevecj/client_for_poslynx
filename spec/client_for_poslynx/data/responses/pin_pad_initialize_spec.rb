@@ -7,9 +7,9 @@ module ClientForPoslynx
     it "Serializes to a PLResponse XML document for a PPINIT response" do
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>PPINIT</Command>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -22,12 +22,12 @@ XML
 
       expected_xml = <<XML
 <?xml version="1.0"?>
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>PPINIT</Command>
   <Result>the-result</Result>
   <ResultText>the-text</ResultText>
   <ErrorCode>the-code</ErrorCode>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -52,11 +52,11 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>PPINIT</Command>
   <Response>1</Response>
   <Response>2</Response>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -65,8 +65,8 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
-<PLResponse>
-</PLResponse>
+<#{Data::Responses::ROOT_NAME}>
+</#{Data::Responses::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -75,9 +75,9 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>DOSOMETHING</Command>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -86,9 +86,9 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>PPINIT</Command>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.result ).to be_nil
@@ -96,10 +96,10 @@ XML
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>PPINIT</Command>
   <SomeOtherThing>Apple</SomeOtherThing>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )
@@ -107,12 +107,12 @@ XML
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML
-<PLResponse>
+<#{Data::Responses::ROOT_NAME}>
   <Command>PPINIT</Command>
   <Result>the-result</Result>
   <ResultText>the-text</ResultText>
   <ErrorCode>the-code</ErrorCode>
-</PLResponse>
+</#{Data::Responses::ROOT_NAME}>
 XML
       actual_instance = described_class.xml_deserialize xml_input
 

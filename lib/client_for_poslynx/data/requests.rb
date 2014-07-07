@@ -8,6 +8,10 @@ module ClientForPoslynx
   module Data
 
     module Requests
+
+      ROOT_NAME = 'PLRequest'
+      DEFAULT_CLIENT_MAC = 'F' * 12
+
     end
 
   end

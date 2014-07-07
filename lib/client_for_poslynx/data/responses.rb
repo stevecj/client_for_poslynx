@@ -8,6 +8,9 @@ module ClientForPoslynx
   module Data
 
     module Responses
+
+      ROOT_NAME = 'PLResponse'
+
     end
 
   end
