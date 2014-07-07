@@ -4,7 +4,7 @@ module ClientForPoslynx
 
   describe Data::Requests::CreditCardSale do
 
-    it "Serializes to a request XML document for a CCSALE request" do
+    it "Serializes to an XML document for a CCSALE request" do
       expected_xml = <<XML
 <?xml version="1.0"?>
 <#{Data::Requests::ROOT_ELEMENT_NAME}>
@@ -56,30 +56,6 @@ XML
       }.to raise_exception( InvalidXmlError )
     end
 
-    it "raises InvalidXmlContentError deserializing XML with wrong root" do
-      xml_input = <<XML
-<PLAppeal>
-  <Command>CCSALE</Command>
-</PLAppeal>
-XML
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
-    it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
-      xml_input = <<XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-  <Amount>1</Amount>
-  <Amount>2</Amount>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
-XML
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
 <#{Data::Requests::ROOT_ELEMENT_NAME}>
@@ -110,19 +86,6 @@ XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.card_number ).to be_nil
     end
-
-    it "keeps a copy of the original XML in the deserialized instance" do
-      xml_input = <<XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-  <Result>OK</Result>
-  <SomeOtherThing>Apple</SomeOtherThing>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
-XML
-      actual_instance = described_class.xml_deserialize xml_input
-      expect( actual_instance.source_data ).to eq( xml_input )
-    end
-
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<XML

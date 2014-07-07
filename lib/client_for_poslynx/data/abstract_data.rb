@@ -9,6 +9,12 @@ module ClientForPoslynx
 
       class << self
 
+        alias blank_new new
+
+        def new
+          blank_new
+        end
+
         def xml_parse(source_xml)
           doc = XmlDocument.new( source_xml )
           concrete_data_classes = descendants.
@@ -32,7 +38,7 @@ module ClientForPoslynx
         def load_from_properties(property_values)
           verify_defining_properties property_values
           variable_property_values = variable_property_values(property_values)
-          instance = new
+          instance = blank_new
           populate_instance_from_properties instance, variable_property_values
           instance
         end

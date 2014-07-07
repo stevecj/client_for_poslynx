@@ -57,36 +57,6 @@ XML
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
 
-    it "raises InvalidXmlError deserializing invalid XML" do
-      expect {
-        described_class.xml_deserialize "I am not valid XML"
-      }.to raise_exception( InvalidXmlError )
-    end
-
-    it "raises InvalidXmlContentError deserializing XML with wrong root" do
-      xml_input = <<XML
-<PLAppeal>
-  <Command>CCSALE</Command>
-</PLAppeal>
-XML
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
-    it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
-      xml_input = <<XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-  <Result>OK</Result>
-  <Result>Sure</Result>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
-XML
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<XML
 <#{Data::Responses::ROOT_ELEMENT_NAME}>
@@ -116,18 +86,6 @@ XML
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.authorized_amount ).to be_nil
-    end
-
-    it "keeps a copy of the original XML in the deserialized instance" do
-      xml_input = <<XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-  <Result>OK</Result>
-  <SomeOtherThing>Apple</SomeOtherThing>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
-XML
-      actual_instance = described_class.xml_deserialize xml_input
-      expect( actual_instance.source_data ).to eq( xml_input )
     end
 
     it "parses XML data with all property elements supplied" do
