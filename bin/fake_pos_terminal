@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+
+
+option_args = []
+value_args = []
+
+$*.each do |arg|
+  list = arg =~ /^--/ ? option_args : value_args
+  list << arg
+end
+
+# The only option we car about is --help, so we either show usage
+# for --help or because an unrecognized option was given.
+show_usage = option_args.length > 0
+
+# Should have exactly 1 value argument for the port number.
+show_usage ||= value_args.length != 1
+
+# Port number should consist of 1 or more digits
+show_usage ||= value_args.first !~ /\A\d+\z/
+
+if show_usage
+  puts
+  puts "Usage: client_for_poslynx <port-number>"
+  puts
+  puts "Runs a fake POS terminal that behaves like a POSLynx unit with"
+  puts "an attached PIN pad. It accepts connections from a client on"
+  puts "the specified TCP port number, and presents a text terminal"
+  puts "user interface that acts similarly to a PIN pad."
+  puts
+  puts "This allows you to manually test or demonstrate your client"
+  puts "software without having access to actual POSLynx hardware."
+  puts
+else
+  port_number = (value_args.first || 0).to_i
+  require 'client_for_poslynx/fake_pos_terminal'
+  ClientForPoslynx::FakePosTerminal.start port_number
+end
