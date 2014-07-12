@@ -20,6 +20,11 @@ module ClientForPoslynx
 
         attr_element_mapping attribute: :client_mac,  element: 'ClientMAC'
 
+        def accept_visitor(visitor)
+          simple_class_name = "#{self.class}".split('::').last
+          visitor.public_send "visit_#{simple_class_name}", self
+        end
+
       end
 
     end

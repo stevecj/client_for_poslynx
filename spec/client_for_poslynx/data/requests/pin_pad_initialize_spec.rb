@@ -88,6 +88,18 @@ module ClientForPoslynx
     end
 
 
+    it "accepts a canonical visitor" do
+      visitor = Object.new
+      visitor.extend Data::Requests::CanVisit
+      expect{ subject.accept_visitor visitor }.not_to raise_exception
+    end
+
+    it "sends itself to an accepted visitor" do
+      visitor = double :visitor
+      expect( visitor ).to receive( :visit_PinPadInitialize ).with( subject )
+      subject.accept_visitor visitor
+    end
+
   end
 
 end

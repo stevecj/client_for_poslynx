@@ -130,6 +130,17 @@ module ClientForPoslynx
       expect( actual_instance.expiry_date          ).to eq( 'the-expiration'  )
     end
 
+    it "accepts a canonical visitor" do
+      visitor = Object.new
+      visitor.extend Data::Requests::CanVisit
+      expect{ subject.accept_visitor visitor }.not_to raise_exception
+    end
+
+    it "sends itself to an accepted visitor" do
+      visitor = double :visitor
+      expect( visitor ).to receive( :visit_CreditCardSale ).with( subject )
+      subject.accept_visitor visitor
+    end
 
   end
 

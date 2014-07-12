@@ -2,6 +2,7 @@
 
 require_relative 'requests/credit_card_sale'
 require_relative 'requests/pin_pad_initialize'
+require_relative 'requests/can_visit'
 
 module ClientForPoslynx
   module Data

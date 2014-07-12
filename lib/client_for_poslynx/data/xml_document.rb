@@ -17,6 +17,7 @@ module ClientForPoslynx
           Nokogiri::XML::ParseOptions::DEFAULT_XML & ~Nokogiri::XML::ParseOptions::RECOVER
         )
       rescue Nokogiri::XML::SyntaxError => e
+        p e
         raise InvalidXmlError
       end
 
