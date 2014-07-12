@@ -12,9 +12,9 @@ module ClientForPoslynx
           ROOT_ELEMENT_NAME
         end
 
-        attr_element_mapping attribute: :result,                   element: 'Result'
-        attr_element_mapping attribute: :result_text,              element: 'ResultText'
-        attr_element_mapping attribute: :error_code,               element: 'ErrorCode'
+        attr_element_mapping attribute: :result,      element: 'Result'
+        attr_element_mapping attribute: :result_text, element: 'ResultText'
+        attr_element_mapping attribute: :error_code,  element: 'ErrorCode'
 
       end
 
