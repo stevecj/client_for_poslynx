@@ -3,6 +3,7 @@
 require 'client_for_poslynx'
 require_relative 'fake_pos_terminal/console_user_interface'
 require_relative 'fake_pos_terminal/server'
+require_relative 'fake_pos_terminal/responder'
 
 module ClientForPoslynx
 

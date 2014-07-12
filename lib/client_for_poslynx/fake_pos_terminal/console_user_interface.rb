@@ -6,13 +6,13 @@ module ClientForPoslynx
     class ConsoleUserInterface
       attr_accessor :status_line
 
-      def reset
-        display_welcome
+      def reset(idle_prompt)
+        display_welcome idle_prompt
       end
 
       private
 
-      def display_welcome
+      def display_welcome(idle_prompt)
         display_content '
                         ___       _    _            ___
              |   |   | |    |    / \  / \  |     | |
@@ -20,9 +20,8 @@ module ClientForPoslynx
              |   |   | |--  |   |    |   | | \ / | |--
              |  / \  | |    |   |    |   | |  |  | |    
               \/   \/  |___ |___ \_/  \_/  |  |  | |___
-  
 
-'
+' + "  (#{idle_prompt})\n"
       end
 
       def display_content(content)
