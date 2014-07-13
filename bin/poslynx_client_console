@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+option_args = []
+value_args = []
+
+$*.each do |arg|
+  list = arg =~ /^--/ ? option_args : value_args
+  list << arg
+end
+
+# Drop command line arguments so 1st argument won't be treated as
+# file name for input.
+$*.replace []
+
+# The only option we car about is --help, so we either show usage
+# for --help or because an unrecognized option was given.
+show_usage = option_args.length > 0
+
+# Should have exactly 1 value argument for the address + port number.
+show_usage ||= value_args.length != 1
+
+# Port number should consist of an optional IP address, followed by
+# colon, followed by a port number
+show_usage ||= value_args.first !~ /\A([^\s]*)?:(\d+)\z/
+host = $1
+port = $2
+
+if show_usage
+
+  puts
+  puts "Usage: poslynx_client_console [<host>]:<port-number>"
+  puts "Host is the domain name or IP address of the POSLynx"
+  puts "or fake POS terminal host.  If this is not supplied,"
+  puts "then 127.0.0.1 is assumed."
+  puts
+
+  puts
+
+else
+
+  require 'client_for_poslynx/has_client_console_support'
+  require 'irb'
+
+  host = '127.0.0.1' if host.nil? || host.length == 0
+  port = port.to_i
+
+  class Object
+    include ClientForPoslynx::HasClientConsoleSupport
+  end
+
+  config = poslynx_client.config
+  config.host = host
+  config.port = port
+
+  IRB.start
+
+end

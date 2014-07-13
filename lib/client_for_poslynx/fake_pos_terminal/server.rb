@@ -15,32 +15,49 @@ module ClientForPoslynx
       end
 
       def start
-        server = TCPServer.new(port_number)
-        responder = Responder.new( user_interface )
-        user_interface.status_line =
-          "Fake POS Terminal ・ TCP port #{port_number} ・ Waiting for connection…"
-        user_interface.reset "initialized"
-        conn = server.accept
-        user_interface.status_line =
-          "Fake POS Terminal ・ TCP port #{port_number} ・ Connection active"
-        user_interface.reset "initialized"
+        show_waiting_for_connection
+        accept_tcp_connection
+        show_connection_active
+
         # Not bothering with graceful shutdown or handlinng of disconnect
         # and reconnect. Just loop until killed by signal or exception.
         while true
-          request = get_request(conn)
-          response = request.accept_visitor responder
-          conn.puts response.xml_serialize
+          request = request_getter.get_data
+          response = request.accept_visitor request_handler
+          tcp_connection.puts response.xml_serialize
         end
       end
 
       private
 
-      def get_request(conn)
-        xml = ''
-        until xml =~ %r!</PLRequest>[\s\r\n]*\z!m
-          xml << conn.gets
-        end
-        Data::AbstractData.xml_parse(xml)
+      attr_reader :tcp_connection
+
+      def show_waiting_for_connection
+        user_interface.status_line =
+          "Fake POS Terminal ・ TCP port #{port_number} ・ Waiting for connection…"
+        user_interface.reset "initialized"
+      end
+
+      def show_connection_active
+        user_interface.status_line =
+          "Fake POS Terminal ・ TCP port #{port_number} ・ Connection active"
+        user_interface.reset "initialized"
+      end
+
+      def accept_tcp_connection
+        @tcp_connection = tcp_server.accept
+      end
+
+      def request_getter
+        @request_getter ||= MessageHandling.stream_data_extractor( tcp_connection )
+      end
+
+      def request_handler
+        @request_handler ||= RequestHandler.new( user_interface )
+      end
+
+      def tcp_server
+        @tcp_server ||= TCPServer.new( port_number )
       end
 
     end

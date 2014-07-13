@@ -5,7 +5,7 @@ require 'client_for_poslynx'
 module ClientForPoslynx
   module FakePosTerminal
 
-    class Responder
+    class RequestHandler
       include Data::Requests::CanVisit
 
       attr_reader :user_interface
