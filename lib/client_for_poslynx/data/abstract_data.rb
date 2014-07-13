@@ -85,6 +85,11 @@ module ClientForPoslynx
         end
 
         def attr_element_mapping(options)
+          type = options[:type]
+          unless type.nil?
+            raise ArgumentError, "The :type option must be a symbol, but a #{type.class} was given." unless Symbol === type
+            raise ArgumentError, "#{type.inspect} is not a valid :type option. Must be :array when given." unless type == :array
+          end
           attribute = options.fetch( :attribute )
           element   = options.fetch( :element   )
           attr_accessor attribute
@@ -121,8 +126,13 @@ module ClientForPoslynx
           variable_property_values.each do |name, text|
             mapping = attr_element_mappings.detect{ |mapping| mapping[:element] == name }
             next unless mapping
+            if mapping[:type] == :array
+              value = text.split('|')
+            else
+              value = text
+            end
             attribute = mapping[:attribute]
-            instance.public_send "#{attribute}=", text
+            instance.public_send "#{attribute}=", value
           end
         end
 
@@ -133,16 +143,21 @@ module ClientForPoslynx
       def xml_serialize
         doc = Nokogiri::XML::Document.new
         root = doc.create_element(self.class.root_element_name)
-        self.class.defining_element_mappings.each do |ae|
-          content = self.class.public_send( ae[:attribute] )
+        self.class.defining_element_mappings.each do |mapping|
+          content = self.class.public_send( mapping[:attribute] )
           next unless content
-          element = doc.create_element( ae[:element], nil, nil, content )
+          element = doc.create_element( mapping[:element], nil, nil, content )
           root.add_child element
         end
-        self.class.attr_element_mappings.each do |ae|
-          content = public_send( ae[:attribute] )
+        self.class.attr_element_mappings.each do |mapping|
+          content = public_send( mapping[:attribute] )
           next unless content
-          element = doc.create_element( ae[:element], nil, nil, content )
+          if mapping[:type] == :array
+            text = [content].flatten * '|'
+          else
+            text = content
+          end
+          element = doc.create_element( mapping[:element], nil, nil, text )
           root.add_child element
         end
         doc.root = root
