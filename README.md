@@ -1,6 +1,22 @@
 # ClientForPoslynx
 
-TODO: Write a gem description
+Note that this is currently a work in progress and is not
+yet ready for use. It is actively under development though,
+so check back in the near future if interested.
+
+A client library for Ruby applications to communicate with a
+Precidia Technologies POSLynx (TM) payment appliance.
+
+This library was not developed by or on behalf of Precidia
+Technologies.
+
+Features:
+
+* Data models for requests and responses.
+* Writing requests to output streams.
+* Reading responses from input streams.
+* A fake POSLynx appliance + PIN Pad script.
+* A POSLynx client console script.
 
 ## Installation
 
@@ -18,7 +34,8 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+For example usage code, see the
+lib/client_for_poslynx/has_client_colsole_support.rb file.
 
 ## Contributing
 
