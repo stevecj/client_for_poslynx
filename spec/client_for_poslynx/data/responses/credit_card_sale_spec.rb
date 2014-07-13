@@ -6,12 +6,7 @@ module ClientForPoslynx
 
 
     it "Serializes to a PLResponse XML document for a CCSALE response" do
-      expected_xml = <<-XML
-<?xml version="1.0"?>
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
-      XML
+      expected_xml = "<PLResponse><Command>CCSALE</Command></PLResponse>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -34,27 +29,25 @@ module ClientForPoslynx
       subject.transaction_date        = 'the-date'
       subject.transaction_time        = 'the-time'
 
-      expected_xml = <<-XML
-<?xml version="1.0"?>
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-  <Result>the-result</Result>
-  <ResultText>the-result-text</ResultText>
-  <ErrorCode>the-error-code</ErrorCode>
-  <Authorization>the-authorization</Authorization>
-  <RecNum>the-record</RecNum>
-  <RefData>the-reference-data</RefData>
-  <Id>the-transaction</Id>
-  <ClientId>the-client</ClientId>
-  <CardType>the-card-type</CardType>
-  <AuthAmt>the-authorized-amount</AuthAmt>
-  <CardNumber>the-card-last-4</CardNumber>
-  <MerchantId>the-merchant</MerchantId>
-  <TerminalId>the-terminal</TerminalId>
-  <TransactionDate>the-date</TransactionDate>
-  <TransactionTime>the-time</TransactionTime>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
-      XML
+      expected_xml =
+        "<PLResponse>" +
+          "<Command>CCSALE</Command>" +
+          "<Result>the-result</Result>" +
+          "<ResultText>the-result-text</ResultText>" +
+          "<ErrorCode>the-error-code</ErrorCode>" +
+          "<Authorization>the-authorization</Authorization>" +
+          "<RecNum>the-record</RecNum>" +
+          "<RefData>the-reference-data</RefData>" +
+          "<Id>the-transaction</Id>" +
+          "<ClientId>the-client</ClientId>" +
+          "<CardType>the-card-type</CardType>" +
+          "<AuthAmt>the-authorized-amount</AuthAmt>" +
+          "<CardNumber>the-card-last-4</CardNumber>" +
+          "<MerchantId>the-merchant</MerchantId>" +
+          "<TerminalId>the-terminal</TerminalId>" +
+          "<TransactionDate>the-date</TransactionDate>" +
+          "<TransactionTime>the-time</TransactionTime>" +
+        "</PLResponse>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -62,8 +55,8 @@ module ClientForPoslynx
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
+</PLResponse>
       XML
 
       expect {
@@ -74,9 +67,9 @@ module ClientForPoslynx
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>DOSOMETHING</Command>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       expect {
@@ -87,9 +80,9 @@ module ClientForPoslynx
 
     it "parses minimally acceptable XML data" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>CCSALE</Command>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       actual_instance = described_class.xml_deserialize xml_input
@@ -99,7 +92,7 @@ module ClientForPoslynx
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>CCSALE</Command>
   <Result>the-result</Result>
   <ResultText>the-result-text</ResultText>
@@ -116,7 +109,7 @@ module ClientForPoslynx
   <TerminalId>the-terminal</TerminalId>
   <TransactionDate>the-date</TransactionDate>
   <TransactionTime>the-time</TransactionTime>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       actual_instance = described_class.xml_deserialize xml_input

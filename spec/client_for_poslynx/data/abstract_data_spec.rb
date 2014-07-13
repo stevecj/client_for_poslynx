@@ -9,12 +9,12 @@ module ClientForPoslynx
 
     it "Parses XML for a CCSALE command to a Request::CreditCardSaleRequest instance" do
       xml_input = <<-XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
   <Command>CCSALE</Command>
   <Id>the-transaction</Id>
   <Amount>the-amount</Amount>
   <CardNumber>the-number</CardNumber>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+</PLRequest>
       XML
 
       actual_request_data = subject.xml_parse( xml_input )
@@ -27,10 +27,10 @@ module ClientForPoslynx
 
     it "Parses XML for a PPINIT command to a Request::PinPadInitialize instance" do
       xml_input = <<-XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
   <Command>PPINIT</Command>
   <IdlePrompt>the-prompt</IdlePrompt>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+</PLRequest>
       XML
 
       actual_request_data = subject.xml_parse( xml_input )
@@ -40,10 +40,10 @@ module ClientForPoslynx
 
     it "Parses XML for a CCSALE response to a Response::CreditCardSaleRequest instance" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>CCSALE</Command>
   <Result>the-result</Result>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       actual_result_data = subject.xml_parse( xml_input )
@@ -53,10 +53,10 @@ module ClientForPoslynx
 
     it "Parses XML for a PPINIT response to a Response::PinPadInitialize instance" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>PPINIT</Command>
   <Result>the-result</Result>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       actual_result_data = subject.xml_parse( xml_input )

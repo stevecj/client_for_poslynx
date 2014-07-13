@@ -146,7 +146,7 @@ module ClientForPoslynx
           root.add_child element
         end
         doc.root = root
-        doc.serialize
+        doc.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XML | Nokogiri::XML::Node::SaveOptions::NO_DECLARATION)
       end
 
     end

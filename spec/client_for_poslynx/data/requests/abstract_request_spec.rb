@@ -5,25 +5,18 @@ module ClientForPoslynx
   describe Data::Requests::AbstractRequest do
 
     it "Serializes to a request document" do
-      expected_xml = <<XML
-<?xml version="1.0"?>
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-  <ClientMAC>#{Data::Requests::DEFAULT_CLIENT_MAC}</ClientMAC>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
-XML
+      mac = Data::Requests::DEFAULT_CLIENT_MAC
+      expected_xml =
+        "<PLRequest><ClientMAC>#{mac}</ClientMAC></PLRequest>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
 
     it "Serializes all assigned members to appropriate elements" do
-      subject.client_mac           = 'the-MAC'
+      subject.client_mac = 'the-MAC'
 
-      expected_xml = <<XML
-<?xml version="1.0"?>
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-  <ClientMAC>the-MAC</ClientMAC>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
-XML
+      expected_xml =
+        "<PLRequest><ClientMAC>the-MAC</ClientMAC></PLRequest>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -46,10 +39,10 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
   <ClientMAC>1</ClientMAC>
   <ClientMAC>2</ClientMAC>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+</PLRequest>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -58,8 +51,8 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
+</PLRequest>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.client_mac ).to be_nil
@@ -67,9 +60,9 @@ XML
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
   <SomeOtherThing>Apple</SomeOtherThing>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+</PLRequest>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )

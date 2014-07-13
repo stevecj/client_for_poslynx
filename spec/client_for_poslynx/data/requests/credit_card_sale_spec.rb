@@ -6,13 +6,9 @@ module ClientForPoslynx
 
 
     it "Serializes to an XML document for a CCSALE request" do
-      expected_xml = <<-XML
-<?xml version="1.0"?>
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-  <ClientMAC>#{Data::Requests::DEFAULT_CLIENT_MAC}</ClientMAC>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
-      XML
+      mac = Data::Requests::DEFAULT_CLIENT_MAC
+      expected_xml =
+        "<PLRequest><Command>CCSALE</Command><ClientMAC>#{mac}</ClientMAC></PLRequest>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -31,23 +27,21 @@ module ClientForPoslynx
       subject.card_number          = 'the-number'
       subject.expiry_date          = 'the-expiration'
 
-      expected_xml = <<-XML
-<?xml version="1.0"?>
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-  <Command>CCSALE</Command>
-  <ClientMAC>the-MAC</ClientMAC>
-  <Id>the-transaction</Id>
-  <ClientId>the-client</ClientId>
-  <TaxAmount>the-tax</TaxAmount>
-  <CustomerCode>the-code</CustomerCode>
-  <Amount>the-amount</Amount>
-  <Input>the-source</Input>
-  <Track2>the-two</Track2>
-  <Track1>the-one</Track1>
-  <CardNumber>the-number</CardNumber>
-  <ExpiryDate>the-expiration</ExpiryDate>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
-      XML
+      expected_xml =
+        "<PLRequest>" +
+          "<Command>CCSALE</Command>" +
+          "<ClientMAC>the-MAC</ClientMAC>" +
+          "<Id>the-transaction</Id>" +
+          "<ClientId>the-client</ClientId>" +
+          "<TaxAmount>the-tax</TaxAmount>" +
+          "<CustomerCode>the-code</CustomerCode" +
+          "><Amount>the-amount</Amount>" +
+          "<Input>the-source</Input>" +
+          "<Track2>the-two</Track2>" +
+          "<Track1>the-one</Track1>" +
+          "<CardNumber>the-number</CardNumber>" +
+          "<ExpiryDate>the-expiration</ExpiryDate>" +
+        "</PLRequest>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -62,8 +56,8 @@ module ClientForPoslynx
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<-XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
+</PLRequest>
       XML
 
       expect {
@@ -74,9 +68,9 @@ module ClientForPoslynx
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<-XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
   <Command>DOSOMETHING</Command>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+</PLRequest>
       XML
 
       expect {
@@ -87,9 +81,9 @@ module ClientForPoslynx
 
     it "parses minimally acceptable XML data" do
       xml_input = <<-XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
   <Command>CCSALE</Command>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+</PLRequest>
       XML
 
       actual_instance = described_class.xml_deserialize xml_input
@@ -99,7 +93,7 @@ module ClientForPoslynx
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<-XML
-<#{Data::Requests::ROOT_ELEMENT_NAME}>
+<PLRequest>
   <Command>CCSALE</Command>
   <ClientMAC>the-MAC</ClientMAC>
   <Id>the-transaction</Id>
@@ -112,7 +106,7 @@ module ClientForPoslynx
   <Track1>the-one</Track1>
   <CardNumber>the-number</CardNumber>
   <ExpiryDate>the-expiration</ExpiryDate>
-</#{Data::Requests::ROOT_ELEMENT_NAME}>
+</PLRequest>
       XML
 
       actual_instance = described_class.xml_deserialize xml_input

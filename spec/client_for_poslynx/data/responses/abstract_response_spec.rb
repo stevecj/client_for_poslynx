@@ -5,10 +5,7 @@ module ClientForPoslynx
   describe Data::Responses::AbstractResponse do
 
     it "Serializes to a response document" do
-      expected_xml = <<XML
-<?xml version="1.0"?>
-<#{Data::Responses::ROOT_ELEMENT_NAME}/>
-XML
+      expected_xml = "<PLResponse/>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -18,14 +15,12 @@ XML
       subject.result_text             = 'the-result-text'
       subject.error_code              = 'the-error-code'
 
-      expected_xml = <<XML
-<?xml version="1.0"?>
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-  <Result>the-result</Result>
-  <ResultText>the-result-text</ResultText>
-  <ErrorCode>the-error-code</ErrorCode>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
-XML
+      expected_xml =
+        "<PLResponse>" +
+          "<Result>the-result</Result>" +
+          "<ResultText>the-result-text</ResultText>" +
+          "<ErrorCode>the-error-code</ErrorCode>" +
+        "</PLResponse>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -48,10 +43,10 @@ XML
 
     it "raises InvalidXmlContentError deserializing XML with a repeated property element" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Result>OK</Result>
   <Result>Sure</Result>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
 XML
       expect {
         described_class.xml_deserialize xml_input
@@ -60,8 +55,8 @@ XML
 
     it "parses minimally acceptable XML data" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
+</PLResponse>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.result ).to be_nil
@@ -69,10 +64,10 @@ XML
 
     it "keeps a copy of the original XML in the deserialized instance" do
       xml_input = <<XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Result>OK</Result>
   <SomeOtherThing>Apple</SomeOtherThing>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
 XML
       actual_instance = described_class.xml_deserialize xml_input
       expect( actual_instance.source_data ).to eq( xml_input )

@@ -6,13 +6,7 @@ module ClientForPoslynx
 
 
     it "Serializes to a PLResponse XML document for a PPINIT response" do
-      expected_xml = <<-XML
-<?xml version="1.0"?>
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-  <Command>PPINIT</Command>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
-      XML
-
+      expected_xml = "<PLResponse><Command>PPINIT</Command></PLResponse>\n"
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
 
@@ -22,15 +16,13 @@ module ClientForPoslynx
       subject.result_text = 'the-text'
       subject.error_code = 'the-code'
 
-      expected_xml = <<-XML
-<?xml version="1.0"?>
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-  <Command>PPINIT</Command>
-  <Result>the-result</Result>
-  <ResultText>the-text</ResultText>
-  <ErrorCode>the-code</ErrorCode>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
-      XML
+      expected_xml =
+        "<PLResponse>" +
+          "<Command>PPINIT</Command>" +
+          "<Result>the-result</Result>" +
+          "<ResultText>the-text</ResultText>" +
+          "<ErrorCode>the-code</ErrorCode>" +
+        "</PLResponse>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
     end
@@ -38,8 +30,8 @@ module ClientForPoslynx
 
     it "raises InvalidXmlContentError deserializing XML with missing Command element" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
+</PLResponse>
       XML
       expect {
         described_class.xml_deserialize xml_input
@@ -49,9 +41,9 @@ module ClientForPoslynx
 
     it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>DOSOMETHING</Command>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       expect {
@@ -62,9 +54,9 @@ module ClientForPoslynx
 
     it "parses minimally acceptable XML data" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>PPINIT</Command>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       actual_instance = described_class.xml_deserialize xml_input
@@ -74,12 +66,12 @@ module ClientForPoslynx
 
     it "parses XML data with all property elements supplied" do
       xml_input = <<-XML
-<#{Data::Responses::ROOT_ELEMENT_NAME}>
+<PLResponse>
   <Command>PPINIT</Command>
   <Result>the-result</Result>
   <ResultText>the-text</ResultText>
   <ErrorCode>the-code</ErrorCode>
-</#{Data::Responses::ROOT_ELEMENT_NAME}>
+</PLResponse>
       XML
 
       actual_instance = described_class.xml_deserialize xml_input
