@@ -2,6 +2,7 @@
 
 require "client_for_poslynx/version"
 require "client_for_poslynx/data"
+require "client_for_poslynx/message_handling"
 
 module ClientForPoslynx
 
