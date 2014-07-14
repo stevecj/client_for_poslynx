@@ -6,14 +6,14 @@ require 'stringio'
 module ClientForPoslynx
 
   describe MessageHandling do
-    it "creates a stream data extractor" do
+    it "creates a stream data reader" do
       stream_text = <<-XML
 <PLRequest><Command>CCSALE</Command><Amount>10.00</Amount></PLRequest>
 <PLRequest><Command>CCSALE</Command><Amount>15.15</Amount></PLRequest>
       XML
 
       stream = StringIO.new( stream_text )
-      extractor = subject.stream_data_extractor( stream )
+      extractor = subject.stream_data_reader( stream )
 
       results = 2.times.map{ extractor.get_data }
 

@@ -49,7 +49,7 @@ module ClientForPoslynx
       end
 
       def request_getter
-        @request_getter ||= MessageHandling.stream_data_extractor( tcp_connection )
+        @request_getter ||= MessageHandling.stream_data_reader( tcp_connection )
       end
 
       def request_handler

@@ -25,7 +25,7 @@ module ClientForPoslynx
       private
 
       def response_getter
-        @response_getter ||= MessageHandling.stream_data_extractor( tcp_connection )
+        @response_getter ||= MessageHandling.stream_data_reader( tcp_connection )
       end
 
       def tcp_connection

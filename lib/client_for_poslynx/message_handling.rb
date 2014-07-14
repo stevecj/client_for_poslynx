@@ -8,7 +8,7 @@ module ClientForPoslynx
 
   module MessageHandling
 
-    def self.stream_data_extractor(stream)
+    def self.stream_data_reader(stream)
       xml_extractor = XmlExtractor.new( stream )
       DataExtractor.new( xml_extractor )
     end
