@@ -23,6 +23,23 @@ module ClientForPoslynx
         end
       end
 
+      def visit_PinPadDisplayMessage(request_data)
+        response = Data::Responses::PinPadDisplayMessage.new
+        if Array(request_data.button_labels).empty?
+          user_interface.show_message request_data.text_lines
+          response.button_response = "no buttons"
+        else
+          user_interface.show_message_with_buttons request_data.text_lines, request_data.button_labels
+          response.button_response = user_interface.get_button_selection( request_data.button_labels )
+        end
+
+        response.result      = 'SUCCESS'
+        response.result_text = "Success message..."
+        response.error_code  = '0000'
+
+        response
+      end
+
     end
 
   end
