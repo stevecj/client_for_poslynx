@@ -25,8 +25,8 @@ module ClientForPoslynx
         root.name
       end
 
-      def property_element_values
-        @property_element_values ||= _property_element_values
+      def property_element_contents
+        @property_element_contents ||= hash_from_element( root )
       end
 
       private
@@ -37,10 +37,10 @@ module ClientForPoslynx
         @root ||= nokogiri_doc.at_xpath("/*")
       end
 
-      def _property_element_values
-        all_property_texts = root.xpath('./*')
+      def hash_from_element(element)
+        all_property_texts = element.xpath('./*')
           .group_by{ |el| el.name }
-          .map{ |name, els| [name, els.map(&:text)] }
+          .map{ |name, els| [name, els.map { |el| value_from_property_element(el) } ] }
         repeated_properties = all_property_texts
           .select{ |name, texts| texts.length > 1 }
           .map(&:first)
@@ -51,6 +51,15 @@ module ClientForPoslynx
         Hash[
           all_property_texts.map{ |name, texts| [name, texts.first] }
         ]
+      end
+
+      def value_from_property_element(element)
+        child_elements = element.xpath('./*')
+        if child_elements.length > 0
+          hash_from_element( element )
+        else
+          element.text
+        end
       end
 
     end

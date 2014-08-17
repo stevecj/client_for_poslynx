@@ -22,7 +22,7 @@ module ClientForPoslynx
             sort_by{ |d| -d.ancestors.length }
           data_class = concrete_data_classes.detect{ |dc|
             dc.root_element_name == doc.root_name &&
-            dc.fits_properties?( doc.property_element_values )
+            dc.fits_properties?( doc.property_element_contents )
           }
           data_class.xml_deserialize(source_xml)
         end
@@ -30,21 +30,21 @@ module ClientForPoslynx
         def xml_deserialize(xml)
           doc = XmlDocument.new(xml)
           raise InvalidXmlContentError, "#{root_element_name} root element not found" unless doc.root_name == root_element_name
-          instance = load_from_properties doc.property_element_values
+          instance = load_from_properties( doc.property_element_contents )
           instance.source_data = doc.source_xml
           instance
         end
 
-        def load_from_properties(property_values)
-          verify_defining_properties property_values
-          variable_property_values = variable_property_values(property_values)
+        def load_from_properties(property_contents)
+          verify_defining_properties property_contents
+          variable_property_contents = select_variable_property_contents(property_contents)
           instance = blank_new
-          populate_instance_from_properties instance, variable_property_values
+          populate_instance_from_properties instance, variable_property_contents
           instance
         end
 
-        def fits_properties?(property_values)
-          unmatched = unmatched_defining_properties( property_values )
+        def fits_properties?(property_contents)
+          unmatched = unmatched_defining_properties( property_contents )
           unmatched.empty?
         end
 
@@ -96,8 +96,8 @@ module ClientForPoslynx
           attr_element_mappings << options
         end
 
-        def verify_defining_properties(property_values)
-          unmatched = unmatched_defining_properties(property_values)
+        def verify_defining_properties(property_contents)
+          unmatched = unmatched_defining_properties( property_contents )
           return if unmatched.empty?
           message = unmatched.map{ |mapping|
             attribute, el_name = mapping.values_at(:attribute, :element)
@@ -107,29 +107,38 @@ module ClientForPoslynx
           raise InvalidXmlContentError, message
         end
 
-        def unmatched_defining_properties(property_values)
+        def unmatched_defining_properties(property_contents)
           unmatched = []
           defining_element_mappings.each do |mapping|
             attribute, el_name = mapping.values_at(:attribute, :element)
             defining_value = public_send(attribute)
-            unmatched << mapping unless property_values[el_name] == defining_value
+            unmatched << mapping unless property_contents[el_name] == defining_value
           end
           unmatched
         end
 
-        def variable_property_values(property_values)
+        def select_variable_property_contents(property_contents)
           defining_element_names = defining_element_mappings.map{ |mapping| mapping[:element] }
-          property_values.reject{ |name, text| defining_element_names.include?(name) }
+          property_contents.reject{ |name, content| defining_element_names.include?(name) }
         end
 
-        def populate_instance_from_properties instance, variable_property_values
-          variable_property_values.each do |name, text|
+        def populate_instance_from_properties instance, variable_property_contents
+          variable_property_contents.each do |name, content|
             mapping = attr_element_mappings.detect{ |mapping| mapping[:element] == name }
             next unless mapping
-            if mapping[:type] == :array
-              value = text.split('|')
+            value = if mapping[:numbered_lines]
+              template = mapping[:numbered_lines]
+              [].tap{ |lines|
+                line_num = 1
+                while ( content.has_key?(key = template % line_num) )
+                  lines << content[key]
+                  line_num += 1
+                end
+              }
+            elsif mapping[:type] == :array
+              content.split('|')
             else
-              value = text
+              content
             end
             attribute = mapping[:attribute]
             instance.public_send "#{attribute}=", value
@@ -152,16 +161,39 @@ module ClientForPoslynx
         self.class.attr_element_mappings.each do |mapping|
           content = public_send( mapping[:attribute] )
           next unless content
-          if mapping[:type] == :array
-            text = [content].flatten * '|'
+          element = if mapping[:numbered_lines]
+            build_numbered_lines_xml_node( doc, mapping[:element], mapping[:numbered_lines], content )
+          elsif mapping[:type] == :array
+            build_vertical_bar_separated_list_node( doc, mapping[:element], content )
           else
-            text = content
+            build_text_element_node( doc, mapping[:element], content )
           end
-          element = doc.create_element( mapping[:element], nil, nil, text )
           root.add_child element
         end
         doc.root = root
         doc.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XML | Nokogiri::XML::Node::SaveOptions::NO_DECLARATION)
+      end
+
+      private
+
+      def build_numbered_lines_xml_node(doc, element_name, line_template, content)
+        element = doc.create_element( element_name )
+        [content].flatten.each_with_index do |line_text, idx|
+          line_num = idx + 1
+          element_name = line_template % line_num
+          line_el = doc.create_element( element_name, nil, nil, line_text )
+          element.add_child line_el
+        end
+        element
+      end
+
+      def build_vertical_bar_separated_list_node(doc, element_name, content)
+        text = [content].flatten * '|'
+        doc.create_element( element_name, nil, nil, text )
+      end
+
+      def build_text_element_node(doc, element_name, content)
+        doc.create_element( element_name, nil, nil, "#{content}" )
       end
 
     end

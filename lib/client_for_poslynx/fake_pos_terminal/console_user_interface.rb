@@ -1,9 +1,13 @@
 # coding: utf-8
 
+require_relative 'format'
+
 module ClientForPoslynx
   module FakePosTerminal
 
     class ConsoleUserInterface
+      include FakePosTerminal::Format
+
       attr_accessor :status_line
 
       def update_status_line(new_text=nil)
@@ -29,25 +33,39 @@ module ClientForPoslynx
       end
 
       def get_button_selection(button_labels)
+        prompt_for_button_selection( button_labels )
+        button_num = get_user_button_number_selection( button_labels.length )
+        button_labels[ button_num - 1 ]
+      end
+
+      def show_card_swipe_request(options = {})
+        options = options.dup
+        content = format_card_swipe_request( options )
+        display_content content
+      end
+
+      def get_fake_card_swipe
         puts
-        print "Enter the number for your button selection: "
+        print "Enter last 4 digits of hypothetical swiped card: "
         save_cursor_position
-        puts '', ''
-        button_labels.each_with_index do |label, idx|
-          button_num = idx + 1
-          puts ' %d) %s' % [ button_num, label ]
-        end
         while true
           restore_cursor_position
           clear_to_end_of_line
-          entry = gets.strip
-          next unless entry =~ /\A\d+\Z/
-          entry = entry.to_i
-          next if entry < 1 or entry > button_labels.length
-          break
+          last_4 = gets.strip
+          return last_4 if last_4 =~ /\A\d\d\d\d\Z/
         end
-        button_idx = entry - 1
-        button_labels[button_idx]
+      end
+
+      def show_payment_confirmation(amount)
+        content =
+          format_payment_confirmation( amount ) <<
+          format_buttons(%w[ OK Cancel ])
+        display_content content
+      end
+
+      def get_confirmation
+        selected_label = get_button_selection(%w[ OK Cancel ])
+        selected_label == 'OK'
       end
 
       private
@@ -87,6 +105,22 @@ module ClientForPoslynx
 ' + "  (#{idle_prompt})\n"
       end
 
+      def format_card_swipe_request(options = {})
+        total = options[:total]
+        lines = []
+        lines << "Please swipe your card"
+        lines << "Total: " + format_usd( total ) if total
+        lines << "Transaction: " + options[:transaction]
+        format_multiline_message( lines )
+      end
+
+      def format_payment_confirmation(amount)
+        lines = []
+        lines << "TOTAL AMOUNT"
+        lines << format_usd( amount )
+        format_multiline_message(lines)
+      end
+
       def format_multiline_message(text_lines)
         centered_lines = text_lines.map { |text| text.center(68) }
         "\n" << centered_lines * "\n" << "\n\n"
@@ -102,8 +136,42 @@ module ClientForPoslynx
         ( button_strings * '' ).center( 68 )
       end
 
+      def prompt_for_button_selection(button_labels)
+        puts
+        print "Enter the number for your button selection: "
+        save_cursor_position
+        puts '', ''
+        button_labels.each_with_index do |label, idx|
+          button_num = idx + 1
+          puts ' %d) %s' % [ button_num, label ]
+        end
+        restore_cursor_position
+      end
+
+      def get_user_button_number_selection(button_count)
+        save_cursor_position
+        while true
+          restore_cursor_position
+          clear_to_end_of_line
+          entry = gets.strip
+          next unless entry =~ /\A\d+\Z/
+          button_num = entry.to_i
+          next if button_num < 1 or button_num > button_count
+          break
+        end
+        restore_cursor_position
+        to_start_of_line
+        clear_to_end_of_screen
+        puts " Selected button #{button_num}"
+        button_num
+      end
+
       def clear_screen
         print "\x1b[2J"
+      end
+
+      def clear_to_end_of_screen
+        print "\x1b[J"
       end
 
       def save_cursor_position
@@ -112,6 +180,10 @@ module ClientForPoslynx
 
       def restore_cursor_position
         print "\x1b[u"
+      end
+
+      def to_start_of_line
+        print "\x1b[0G"
       end
 
       def write_status_line

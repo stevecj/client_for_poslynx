@@ -28,6 +28,8 @@ module ClientForPoslynx
       subject.terminal_id             = 'the-terminal'
       subject.transaction_date        = 'the-date'
       subject.transaction_time        = 'the-time'
+      subject.receipt                 = [ 'Merchant Receipt', '...' ]
+      subject.customer_receipt        = [ 'Customer Receipt', '...' ]
 
       expected_xml =
         "<PLResponse>" +
@@ -47,6 +49,14 @@ module ClientForPoslynx
           "<TerminalId>the-terminal</TerminalId>" +
           "<TransactionDate>the-date</TransactionDate>" +
           "<TransactionTime>the-time</TransactionTime>" +
+          "<Receipt>" +
+            "<Receipt1>Merchant Receipt</Receipt1>" +
+            "<Receipt2>...</Receipt2>" +
+          "</Receipt>" +
+          "<ReceiptCustomer>" +
+            "<Receipt1>Customer Receipt</Receipt1>" +
+            "<Receipt2>...</Receipt2>" +
+          "</ReceiptCustomer>" +
         "</PLResponse>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -109,6 +119,14 @@ module ClientForPoslynx
   <TerminalId>the-terminal</TerminalId>
   <TransactionDate>the-date</TransactionDate>
   <TransactionTime>the-time</TransactionTime>
+  <Receipt>
+    <Receipt1>Merchant Receipt</Receipt1>
+    <Receipt2>...</Receipt2>
+  </Receipt>
+  <ReceiptCustomer>
+    <Receipt1>Customer Receipt</Receipt1>
+    <Receipt2>...</Receipt2>
+  </ReceiptCustomer>
 </PLResponse>
       XML
 
@@ -129,6 +147,8 @@ module ClientForPoslynx
       expect( actual_instance.terminal_id             ).to eq( 'the-terminal'          )
       expect( actual_instance.transaction_date        ).to eq( 'the-date'              )
       expect( actual_instance.transaction_time        ).to eq( 'the-time'              )
+      expect( actual_instance.receipt                 ).to eq( ['Merchant Receipt', '...'] )
+      expect( actual_instance.customer_receipt        ).to eq( ['Customer Receipt', '...'] )
     end
 
 
