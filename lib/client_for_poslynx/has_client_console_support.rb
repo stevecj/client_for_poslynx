@@ -18,18 +18,18 @@ module ClientForPoslynx
       end
 
       def send_request(request)
-        tcp_connection.puts request.xml_serialize
-        response_getter.get_data
+        conn = TCPSocket.new(config.host, config.port)
+        conn.puts request.xml_serialize
+        response = get_response_from( conn )
+        conn.close unless conn.eof?
+        response
       end
 
       private
 
-      def response_getter
-        @response_getter ||= MessageHandling.stream_data_reader( tcp_connection )
-      end
-
-      def tcp_connection
-        @tcp_connection ||= TCPSocket.new(config.host, config.port)
+      def get_response_from( connection )
+        reader = MessageHandling.stream_data_reader( connection )
+        reader.get_data
       end
 
     end

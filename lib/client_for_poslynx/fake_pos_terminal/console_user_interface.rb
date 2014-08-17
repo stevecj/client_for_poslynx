@@ -10,6 +10,13 @@ module ClientForPoslynx
         display_welcome idle_prompt
       end
 
+      def update_status_line(new_text=nil)
+        self.status_line = new_text unless new_text.nil?
+        print "\x1b[s"
+        write_status_line
+        print "\x1b[u"
+      end
+
       private
 
       def display_welcome(idle_prompt)
@@ -39,7 +46,7 @@ module ClientForPoslynx
       end
 
       def write_status_line
-        puts " << #{status_line} >>"
+        puts "\x1b[1;1H\x1bK << #{status_line} >>"
       end
 
       def write_top_border
