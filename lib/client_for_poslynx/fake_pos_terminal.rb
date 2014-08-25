@@ -1,9 +1,12 @@
 # coding: utf-8
 
 require 'client_for_poslynx'
+require_relative 'fake_pos_terminal/format'
 require_relative 'fake_pos_terminal/console_user_interface'
 require_relative 'fake_pos_terminal/server'
-require_relative 'fake_pos_terminal/request_handler'
+require_relative 'fake_pos_terminal/request_dispatcher'
+require_relative 'fake_pos_terminal/result_assemblers'
+require_relative 'fake_pos_terminal/request_handlers'
 
 module ClientForPoslynx
 

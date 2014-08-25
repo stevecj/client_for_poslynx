@@ -25,6 +25,34 @@ module ClientForPoslynx
         response
       end
 
+      def example_pin_pad_initialize_request
+        ClientForPoslynx::Data::Requests::PinPadInitialize.new.tap { |req|
+          req.idle_prompt = "Example idle prompt"
+        }
+      end
+
+      def example_pin_pad_display_message_request
+        ClientForPoslynx::Data::Requests::PinPadDisplayMessage.new.tap { |req|
+          req.text_lines = [
+            "First example line",
+            "Second example line",
+          ]
+          req.line_count = 2
+          req.button_labels = [
+            "1st of optional buttons",
+            "2nd button"
+          ]
+        }
+      end
+
+      def example_credit_card_sale_request
+        ClientForPoslynx::Data::Requests::CreditCardSale.new.tap { |req|
+          req.merchant_supplied_id = 'INVC-123-MERCH-SUPPL'
+          req.amount               = '101.25'
+          req.input_source         = 'EXTERNAL'
+        }
+      end
+
       private
 
       def get_response_from( connection )

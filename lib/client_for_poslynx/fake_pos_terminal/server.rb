@@ -21,7 +21,7 @@ module ClientForPoslynx
           show_connection_active
 
           request = get_request_from( conn )
-          response = request.accept_visitor request_handler
+          response = request.accept_visitor request_dispatcher
           conn.puts response.xml_serialize
           conn.close
           show_waiting_for_next_request
@@ -55,8 +55,8 @@ module ClientForPoslynx
         @tcp_server ||= TCPServer.new( port_number )
       end
 
-      def request_handler
-        @request_handler ||= RequestHandler.new( user_interface )
+      def request_dispatcher
+        @request_dispatcher ||= RequestDispatcher.new( user_interface )
       end
 
     end

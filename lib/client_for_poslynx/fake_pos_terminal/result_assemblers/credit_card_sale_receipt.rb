@@ -1,12 +1,10 @@
 # coding: utf-8
 
-require_relative '../format'
-
 module ClientForPoslynx
   module FakePosTerminal
-    class RequestHandler
+    module ResultAssemblers
 
-      class VisaReceiptFormatter
+      class CreditCardSaleReceipt
         include FakePosTerminal::Format
 
         attr_reader :request, :response
@@ -25,7 +23,7 @@ module ClientForPoslynx
             "(613)542-6019                         ",
             "                                      ",
             "TYPE             PURCHASE             ",
-            "ACCOUNT TYPE     Visa                 ",
+            "ACCOUNT TYPE     %-21s" % response.card_type,
             "CARD NUMBER      ************%s     " % response.card_number_last_4,
             "DATE/TIME        %s    " % date_time_text,
             "REC #            %-6s               " % response.record_number,
