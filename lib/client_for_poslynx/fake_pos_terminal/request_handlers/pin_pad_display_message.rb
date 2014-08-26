@@ -14,7 +14,7 @@ module ClientForPoslynx
             handle_with_buttons
           end
 
-          set_result '0000', 'SUCCESS', 'Success message...'
+          set_result '0000', 'SUCCESS', 'Success'
         end
 
         private

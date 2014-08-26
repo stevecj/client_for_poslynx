@@ -12,13 +12,14 @@ module ClientForPoslynx
     end
 
     class Client
+      attr_accessor :client_mac_for_examples
 
       def config
         @config ||= Config.new
       end
 
       def send_request(request)
-        conn = TCPSocket.new(config.host, config.port)
+        conn = TCPSocket.new( config.host, config.port )
         conn.puts request.xml_serialize
         response = get_response_from( conn )
         conn.close unless conn.eof?
@@ -27,12 +28,14 @@ module ClientForPoslynx
 
       def example_pin_pad_initialize_request
         ClientForPoslynx::Data::Requests::PinPadInitialize.new.tap { |req|
+          assign_common_example_request_attrs_to req
           req.idle_prompt = "Example idle prompt"
         }
       end
 
       def example_pin_pad_display_message_request
         ClientForPoslynx::Data::Requests::PinPadDisplayMessage.new.tap { |req|
+          assign_common_example_request_attrs_to req
           req.text_lines = [
             "First example line",
             "Second example line",
@@ -47,6 +50,7 @@ module ClientForPoslynx
 
       def example_credit_card_sale_request
         ClientForPoslynx::Data::Requests::CreditCardSale.new.tap { |req|
+          assign_common_example_request_attrs_to req
           req.merchant_supplied_id = 'INVC-123-MERCH-SUPPL'
           req.amount               = '101.25'
           req.input_source         = 'EXTERNAL'
@@ -58,6 +62,10 @@ module ClientForPoslynx
       def get_response_from( connection )
         reader = MessageHandling.stream_data_reader( connection )
         reader.get_data
+      end
+
+      def assign_common_example_request_attrs_to(request)
+        request.client_mac = client_mac_for_examples if client_mac_for_examples
       end
 
     end

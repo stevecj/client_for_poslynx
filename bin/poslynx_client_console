@@ -25,16 +25,34 @@ show_usage ||= value_args.first !~ /\A([^\s]*)?:(\d+)\z/
 host = $1
 port = $2
 
+bin_path = File.dirname(__FILE__)
+gem_path = File.dirname( bin_path )
+support_path = File.join( gem_path, 'lib', 'client_for_poslynx', 'has_client_console_support.rb' )
+
 if show_usage
 
-  puts
-  puts "Usage: poslynx_client_console [<host>]:<port-number>"
-  puts "Host is the domain name or IP address of the POSLynx"
-  puts "or fake POS terminal host.  If this is not supplied,"
-  puts "then 127.0.0.1 is assumed."
-  puts
+  puts <<-EOS
 
-  puts
+Usage: poslynx_client_console [<host>]:<port-number> Host is the
+domain name or IP address of the POSLynx or fake POS terminal
+host.  If this is not supplied, then 127.0.0.1 is assumed.
+
+Opens an interactive Ruby shell with a globally acccessible
+poslynx_client method that returns an object with conveniences
+for making requests to a POSLynx or to your fake
+POSLynx+terminal host.
+
+For example, you might execute the following commands from
+within the console...
+
+  poslynx_client.client_mac_for_examples = '123456789012'
+  resp = poslynx_client.send_request( poslynx_client.example_credit_card_sale_request )
+
+To see what else the poslynx_client object provides, see the
+source code
+in #{support_path}
+
+  EOS
 
 else
 
