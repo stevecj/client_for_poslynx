@@ -57,6 +57,16 @@ module ClientForPoslynx
         }
       end
 
+      def example_debit_card_sale_request
+        ClientForPoslynx::Data::Requests::DebitCardSale.new.tap { |req|
+          assign_common_example_request_attrs_to req
+          req.merchant_supplied_id = 'INVC-123-MERCH-SUPPL'
+          req.amount               = '101.25'
+          req.cash_back            =  '20.00'
+          req.input_source         = 'EXTERNAL'
+        }
+      end
+
       private
 
       def get_response_from( connection )
