@@ -10,6 +10,7 @@ module ClientForPoslynx
         PinPadInitialize
         PinPadDisplayMessage
         CreditCardSale
+        PinPadDisplaySpecifiedForm
       ]
 
       attr_reader :user_interface

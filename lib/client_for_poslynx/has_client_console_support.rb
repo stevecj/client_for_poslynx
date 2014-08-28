@@ -67,6 +67,20 @@ module ClientForPoslynx
         }
       end
 
+      def example_pin_pad_display_specified_form_request
+        ClientForPoslynx::Data::Requests::PinPadDisplaySpecifiedForm.new.tap { |req|
+          assign_common_example_request_attrs_to req
+          req.text_values = [
+            "First example text value",
+            "Second example text value",
+          ]
+          req.button_labels = [
+            "1st of optional buttons",
+            "2nd button"
+          ]
+        }
+      end
+
       private
 
       def get_response_from( connection )
