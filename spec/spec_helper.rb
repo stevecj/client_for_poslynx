@@ -2,3 +2,6 @@
 
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'client_for_poslynx'
+Dir[File.join( File.dirname(__FILE__), 'support', '**', '*.rb')].each do |script|
+  require script
+end

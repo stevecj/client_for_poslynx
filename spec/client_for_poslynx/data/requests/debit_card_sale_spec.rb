@@ -4,6 +4,7 @@ module ClientForPoslynx
 
   describe Data::Requests::DebitCardSale do
 
+    it_behaves_like "a data object"
 
     it "Serializes to an XML document for a DCSALE request" do
       mac = Data::Requests::DEFAULT_CLIENT_MAC
@@ -42,38 +43,6 @@ module ClientForPoslynx
         "</PLRequest>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
-    end
-
-
-    it "raises InvalidXmlError deserializing invalid XML" do
-      expect {
-        described_class.xml_deserialize "I am not valid XML"
-      }.to raise_exception( InvalidXmlError )
-    end
-
-
-    it "raises InvalidXmlContentError deserializing XML with missing Command element" do
-      xml_input = <<-XML
-<PLRequest>
-</PLRequest>
-      XML
-
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
-
-    it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
-      xml_input = <<-XML
-<PLRequest>
-  <Command>DOSOMETHING</Command>
-</PLRequest>
-      XML
-
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
     end
 
 

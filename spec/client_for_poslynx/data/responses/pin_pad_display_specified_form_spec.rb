@@ -4,6 +4,7 @@ module ClientForPoslynx
 
   describe Data::Responses::PinPadDisplaySpecifiedForm do
 
+    it_behaves_like "a data object"
 
     it "Serializes to a PLResponse XML document for a PPSPECIFIEDFORM response" do
       expected_xml = "<PLResponse><Command>PPSPECIFIEDFORM</Command></PLResponse>\n"
@@ -29,30 +30,6 @@ module ClientForPoslynx
         "</PLResponse>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
-    end
-
-
-    it "raises InvalidXmlContentError deserializing XML with missing Command element" do
-      xml_input = <<-XML
-<PLResponse>
-</PLResponse>
-      XML
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
-
-    it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
-      xml_input = <<-XML
-<PLResponse>
-  <Command>DOSOMETHING</Command>
-</PLResponse>
-      XML
-
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
     end
 
 

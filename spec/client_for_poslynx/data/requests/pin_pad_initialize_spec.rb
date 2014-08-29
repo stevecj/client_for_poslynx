@@ -4,6 +4,7 @@ module ClientForPoslynx
 
   describe Data::Requests::PinPadInitialize do
 
+    it_behaves_like "a data object"
 
     it "Serializes to a PLRequest XML document for a CCSALE request" do
       mac = Data::Requests::DEFAULT_CLIENT_MAC
@@ -22,31 +23,6 @@ module ClientForPoslynx
         "<PLRequest><Command>PPINIT</Command><ClientMAC>the-mac</ClientMAC><IdlePrompt>the-prompt</IdlePrompt></PLRequest>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
-    end
-
-
-    it "raises InvalidXmlContentError deserializing XML with missing Command element" do
-      xml_input = <<-XML
-<PLRequest>
-</PLRequest>
-      XML
-
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
-    end
-
-
-    it "raises InvalidXmlContentError deserializing XML with wrong Command value" do
-      xml_input = <<-XML
-<PLRequest>
-  <Command>DOSOMETHING</Command>
-</PLRequest>
-      XML
-
-      expect {
-        described_class.xml_deserialize xml_input
-      }.to raise_exception( InvalidXmlContentError )
     end
 
 
