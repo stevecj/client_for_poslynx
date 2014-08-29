@@ -4,14 +4,15 @@ module ClientForPoslynx
   module FakePosTerminal
     module ResultAssemblers
 
-      class CreditCardSaleReceipt
+      class CardSaleReceipt
         include FakePosTerminal::Format
 
-        attr_reader :request, :response
+        attr_reader :request, :response, :total_amount
 
-        def initialize(request, response)
-          @request  = request
-          @response = response
+        def initialize(request, response, total_amount)
+          @request      = request
+          @response     = response
+          @total_amount = total_amount
         end
 
         def call(copy)
@@ -29,8 +30,9 @@ module ClientForPoslynx
             "REC #            %-6s               " % response.record_number,
             "REFERENCE #      %-12s S       " % response.reference_data,
             "AMOUNT           %-21s" % amount_usd,
+            cash_back_line,
             "                 --------------       ",
-            "TOTAL            %-21s" % amount_usd,
+            "TOTAL            %-21s" % total_amount_usd,
             "                 --------------       ",
             "                                      ",
             "%-38s" % status_text,
@@ -40,11 +42,28 @@ module ClientForPoslynx
             "                                      ",
             "%-38s" % copy_text,
             "                                      ",
-          ]
+          ].compact
+        end
+
+        def cash_back_line
+          return nil unless cash_back_applicable?
+          "CASH BACK        %-21s" % cash_back_usd
         end
 
         def amount_usd
           format_usd( request.amount )
+        end
+
+        def total_amount_usd
+          format_usd( total_amount )
+        end
+
+        def cash_back_applicable?
+          request.respond_to?(:cash_back)
+        end
+
+        def cash_back_usd
+          format_usd( request.cash_back )
         end
 
         def status_text

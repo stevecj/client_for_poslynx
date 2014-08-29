@@ -5,46 +5,25 @@ module ClientForPoslynx
     module RequestHandlers
 
       class DebitCardSale < RequestHandlers::AbstractHandler
-
-        def call
-          @response = Data::Responses::DebitCardSale.new
-          if request.input_source == 'EXTERNAL'
-            handle_supported_source_request
-          else
-            handle_unsupported_source_request
-          end
-        end
+        include RequestHandlers::HandlesCardSale
 
         private
+
+        def new_response
+          ClientForPoslynx::Data::Responses::DebitCardSale.new
+        end
 
         def handle_supported_source_request
           response.card_number_last_4 = get_card_swipe
           response.input_method = 'SWIPED'
           confirmed = get_confirmation
           get_customer_pin if confirmed
+
+          # Precidia docs say value is 'OtherCard' for debit, but
+          # in practice, found result to be 'Debit' instead.
+          response.card_type = 'Debit'
+
           assemble_supported_source_response confirmed
-        end
-
-        def handle_unsupported_source_request
-          set_result '0135', 'Transaction Not Supported'
-          response.result_text = "Fake POSLynx doesn't currently support input source other than EXTERNAL"
-          user_interface.update_status_line response.result_text
-        end
-
-        def get_card_swipe
-          user_interface.show_card_swipe_request(
-            total: request.amount,
-            transaction: 'PURCHASE',
-          )
-          user_interface.get_fake_card_swipe
-        end
-
-        def get_confirmation
-          amount_to_authorize = '%.2f' % (
-            BigDecimal( request.amount ) + BigDecimal( request.cash_back )
-          )
-          user_interface.show_payment_confirmation amount_to_authorize
-          user_interface.get_confirmation
         end
 
         def get_customer_pin
@@ -54,56 +33,17 @@ module ClientForPoslynx
           nil
         end
 
-        def assemble_supported_source_response(confirmed)
-          # Precidia docs say value is 'OtherCard' for debit, but
-          # in practice, found result to be 'Debit' instead.
-          response.card_type = 'Debit'
-
-          if confirmed
-            assemble_confirmed_response_specifics
-          else
-            assemble_cancelled_response_specifics
-          end
-
-          assemble_request_response_passthrough
-          assemble_fake_client_specifics
-          assemble_response_transaction_datetime
-          assemble_response_receipts
-        end
-
-        def assemble_confirmed_response_specifics
-          set_result '0000', 'APPROVED', 'Approval'
-          response.processor_authorization = '1234567'
-          response.record_number           = '121212'
-          response.reference_data          = '123456789012'
-          response.authorized_amount       = request.amount
-        end
-
-        def assemble_cancelled_response_specifics
-          set_result '0092', 'ERROR', 'CANCELLED'
+        def total_amount
+          '%.2f' % (
+            BigDecimal( request.amount ) + BigDecimal( request.cash_back )
+          )
         end
 
         def assemble_request_response_passthrough
           response.merchant_supplied_id = request.merchant_supplied_id
           response.client_id            = request.client_id
+          response.amount               = request.amount
           response.cash_back            = request.cash_back
-        end
-
-        def assemble_fake_client_specifics
-          response.merchant_id = '9876543221098'
-          response.terminal_id = '12345678'
-        end
-
-        def assemble_response_transaction_datetime
-          now = Time.now
-          response.transaction_date = now.strftime('%m%d%y')
-          response.transaction_time = now.strftime('%H%M%S')
-        end
-
-        def assemble_response_receipts
-          receipt_assembler = FakePosTerminal::ResultAssemblers::CreditCardSaleReceipt.new( request, response )
-          response.receipt          = receipt_assembler.call( :merchant)
-          response.customer_receipt = receipt_assembler.call( :customer)
         end
 
       end

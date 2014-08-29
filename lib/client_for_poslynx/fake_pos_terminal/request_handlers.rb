@@ -1,6 +1,7 @@
 # coding: utf-8
 
 require_relative 'request_handlers/abstract_handler'
+require_relative 'request_handlers/handles_card_sale'
 require_relative 'request_handlers/credit_card_sale'
 require_relative 'request_handlers/debit_card_sale'
 require_relative 'request_handlers/pin_pad_initialize'
