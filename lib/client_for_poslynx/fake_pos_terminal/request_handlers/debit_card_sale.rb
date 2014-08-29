@@ -4,10 +4,10 @@ module ClientForPoslynx
   module FakePosTerminal
     module RequestHandlers
 
-      class CreditCardSale < RequestHandlers::AbstractHandler
+      class DebitCardSale < RequestHandlers::AbstractHandler
 
         def call
-          @response = Data::Responses::CreditCardSale.new
+          @response = Data::Responses::DebitCardSale.new
           if request.input_source == 'EXTERNAL'
             handle_supported_source_request
           else
@@ -21,6 +21,7 @@ module ClientForPoslynx
           response.card_number_last_4 = get_card_swipe
           response.input_method = 'SWIPED'
           confirmed = get_confirmation
+          get_customer_pin if confirmed
           assemble_supported_source_response confirmed
         end
 
@@ -39,12 +40,24 @@ module ClientForPoslynx
         end
 
         def get_confirmation
-          user_interface.show_payment_confirmation request.amount
+          amount_to_authorize = '%.2f' % (
+            BigDecimal( request.amount ) + BigDecimal( request.cash_back )
+          )
+          user_interface.show_payment_confirmation amount_to_authorize
           user_interface.get_confirmation
         end
 
+        def get_customer_pin
+          user_interface.show_pin_request
+          user_interface.get_fake_pin_entry
+          user_interface.show_pin_request clear: false, filled_in: true
+          nil
+        end
+
         def assemble_supported_source_response(confirmed)
-          response.card_type = 'Visa'
+          # Precidia docs say value is 'OtherCard' for debit, but
+          # in practice, found result to be 'Debit' instead.
+          response.card_type = 'Debit'
 
           if confirmed
             assemble_confirmed_response_specifics
@@ -73,6 +86,7 @@ module ClientForPoslynx
         def assemble_request_response_passthrough
           response.merchant_supplied_id = request.merchant_supplied_id
           response.client_id            = request.client_id
+          response.cash_back            = request.cash_back
         end
 
         def assemble_fake_client_specifics

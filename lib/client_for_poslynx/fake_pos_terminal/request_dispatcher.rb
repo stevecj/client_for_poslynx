@@ -10,6 +10,7 @@ module ClientForPoslynx
         PinPadInitialize
         PinPadDisplayMessage
         CreditCardSale
+        DebitCardSale
         PinPadDisplaySpecifiedForm
       ]
 

@@ -68,10 +68,31 @@ module ClientForPoslynx
         selected_label == 'OK'
       end
 
+      def show_pin_request(options = {})
+        show_as_filled_in = options.fetch(:filled_in){ false }
+        input_box = show_as_filled_in ? '[ * * * * ]' : '[ _ _ _ _ ]'
+        content = format_multiline_message( [
+          'Please enter your PIN...',
+          input_box
+        ])
+        display_content content, options
+      end
+
+      def get_fake_pin_entry
+        puts
+        print "Press enter to pretend to enter a PIN: "
+        save_cursor_position
+        gets
+        restore_cursor_position
+        clear_to_end_of_line
+        puts '(entered)'
+      end
+
       private
 
-      def display_content(content)
-        clear_screen
+      def display_content(content, options = {})
+        clear_first = options.fetch(:clear){ true }
+        clear_screen if clear_first
         write_status_line
         write_top_border
 
