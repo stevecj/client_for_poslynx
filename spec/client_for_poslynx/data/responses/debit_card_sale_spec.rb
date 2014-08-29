@@ -29,6 +29,7 @@ module ClientForPoslynx
       subject.terminal_id             = 'the-terminal'
       subject.transaction_date        = 'the-date'
       subject.transaction_time        = 'the-time'
+      subject.input_method            = 'the-input-method'
       subject.cash_back               = 'the-cash-back'
       subject.receipt                 = [ 'Merchant Receipt', '...' ]
       subject.customer_receipt        = [ 'Customer Receipt', '...' ]
@@ -52,6 +53,7 @@ module ClientForPoslynx
           "<TerminalId>the-terminal</TerminalId>" +
           "<TransactionDate>the-date</TransactionDate>" +
           "<TransactionTime>the-time</TransactionTime>" +
+          "<InputMethod>the-input-method</InputMethod>" +
           "<Cashback>the-cash-back</Cashback>" +
           "<Receipt>" +
             "<Receipt1>Merchant Receipt</Receipt1>" +
@@ -124,6 +126,7 @@ module ClientForPoslynx
   <TerminalId>the-terminal</TerminalId>
   <TransactionDate>the-date</TransactionDate>
   <TransactionTime>the-time</TransactionTime>
+  <InputMethod>the-input-method</InputMethod>
   <Cashback>the-cash-back</Cashback>
   <Receipt>
     <Receipt1>Merchant Receipt</Receipt1>
@@ -154,6 +157,7 @@ module ClientForPoslynx
       expect( actual_instance.terminal_id             ).to eq( 'the-terminal'          )
       expect( actual_instance.transaction_date        ).to eq( 'the-date'              )
       expect( actual_instance.transaction_time        ).to eq( 'the-time'              )
+      expect( actual_instance.input_method            ).to eq( 'the-input-method'      )
       expect( actual_instance.cash_back               ).to eq( 'the-cash-back'         )
       expect( actual_instance.receipt                 ).to eq( ['Merchant Receipt', '...'] )
       expect( actual_instance.customer_receipt        ).to eq( ['Customer Receipt', '...'] )
