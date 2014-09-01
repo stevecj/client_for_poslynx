@@ -8,7 +8,7 @@ module ClientForPoslynx
 
       class PinPadDisplayMessage < AbstractResponse
 
-        defining_element_value attribute: :command, element: 'Command', value: 'PPDISPLAY'
+        defining_property_value attribute: :command, element: 'Command', value: 'PPDISPLAY'
         attr_element_mapping attribute: :button_response,  element: 'Response'
 
       end

@@ -8,7 +8,7 @@ module ClientForPoslynx
 
       class DebitCardSale < AbstractResponse
 
-        defining_element_value attribute: :command, element: 'Command', value: 'DCSALE'
+        defining_property_value attribute: :command, element: 'Command', value: 'DCSALE'
 
         attr_element_mapping attribute: :processor_authorization,  element: 'Authorization'
         attr_element_mapping attribute: :record_number,            element: 'RecNum'

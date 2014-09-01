@@ -8,7 +8,7 @@ module ClientForPoslynx
 
       class PinPadInitialize < AbstractResponse
 
-        defining_element_value attribute: :command, element: 'Command', value: 'PPINIT'
+        defining_property_value attribute: :command, element: 'Command', value: 'PPINIT'
 
       end
 

@@ -1,6 +1,7 @@
 # coding: utf-8
 
-require 'nokogiri'
+require_relative 'abstract_data/attribute_element_mapping'
+require_relative 'abstract_data/defining_property_mapping'
 
 module ClientForPoslynx
   module Data
@@ -16,22 +17,16 @@ module ClientForPoslynx
         end
 
         def xml_parse(source_xml)
-          doc = XmlDocument.new( source_xml )
-          concrete_data_classes = descendants.
-            reject{ |d| d.name =~ /\bAbstract[A-Z]\w*$/ }.
-            sort_by{ |d| -d.ancestors.length }
-          data_class = concrete_data_classes.detect{ |dc|
-            dc.root_element_name == doc.root_name &&
-            dc.fits_properties?( doc.property_element_contents )
-          }
-          data_class.xml_deserialize(source_xml)
+          doc = XmlDocument.from_xml( source_xml )
+          data_class = concrete_data_class_for_nokogiri_document( doc )
+          data_class.xml_deserialize( source_xml )
         end
 
         def xml_deserialize(xml)
-          doc = XmlDocument.new(xml)
-          raise InvalidXmlContentError, "#{root_element_name} root element not found" unless doc.root_name == root_element_name
+          doc = XmlDocument.from_xml( xml )
+          doc.verify_root_element_name root_element_name
           instance = load_from_properties( doc.property_element_contents )
-          instance.source_data = doc.source_xml
+          instance.source_data = xml
           instance
         end
 
@@ -48,22 +43,20 @@ module ClientForPoslynx
           unmatched.empty?
         end
 
-        def defining_element_mappings
-          @defining_element_mappings ||=
-            begin
-              self == AbstractData ?
-                [] :
-                superclass.defining_element_mappings + []
-            end
+        def defining_property_mappings
+          @defining_property_mappings ||= (
+            self == AbstractData ?
+              [] :
+              superclass.defining_property_mappings + []
+          )
         end
 
         def attr_element_mappings
-          @attr_element_mappings ||=
-            begin
-              self == AbstractData ?
-                [] :
-                superclass.attr_element_mappings + []
-            end
+          @attr_element_mappings ||= (
+            self == AbstractData ?
+              [] :
+              superclass.attr_element_mappings + []
+          )
         end
 
         private
@@ -76,72 +69,63 @@ module ClientForPoslynx
           @@descendants ||= []
         end
 
-        def defining_element_value(options)
+        def concrete_data_class_for_nokogiri_document(doc)
+          data_class = concrete_data_classes.detect{ |dc|
+            dc.root_element_name == doc.root_name &&
+            dc.fits_properties?( doc.property_element_contents )
+          }
+        end
+
+        def concrete_data_classes
+          descendants.
+            reject{ |d| d.name =~ /\bAbstract[A-Z]\w*$/ }.
+            sort_by{ |d| -d.ancestors.length }
+        end
+
+        def defining_property_value(options)
           attribute = options.fetch( :attribute )
           element   = options.fetch( :element   )
           value     = options.fetch( :value     )
-          define_singleton_method(attribute) { value }
-          defining_element_mappings << { attribute: attribute, element: element }
+          define_singleton_method( attribute ) { value }
+          define_method( attribute ) { value }
+          defining_property_mappings << DefiningPropertyMapping.new( attribute: attribute, element: element )
         end
 
         def attr_element_mapping(options)
-          type = options[:type]
-          unless type.nil?
-            raise ArgumentError, "The :type option must be a symbol, but a #{type.class} was given." unless Symbol === type
-            raise ArgumentError, "#{type.inspect} is not a valid :type option. Must be :array when given." unless type == :array
-          end
-          attribute = options.fetch( :attribute )
-          element   = options.fetch( :element   )
-          attr_accessor attribute
-          attr_element_mappings << options
+          mapping = AbstractData::AttributeElementMapping.new( options )
+          attr_element_mappings << mapping
+          attr_accessor mapping.attribute_name
         end
 
         def verify_defining_properties(property_contents)
           unmatched = unmatched_defining_properties( property_contents )
           return if unmatched.empty?
-          message = unmatched.map{ |mapping|
-            attribute, el_name = mapping.values_at(:attribute, :element)
-            defining_value = public_send(attribute)
-            "#{el_name} child element with \"#{defining_value}\" value not found."
+          message = unmatched.map{ |property_mapping|
+            defining_mapping = public_send( property_mapping.attribute_name )
+            "#{property_mapping.element_name} child element with \"#{defining_mapping}\" value not found."
           }.join( ' ' )
           raise InvalidXmlContentError, message
         end
 
         def unmatched_defining_properties(property_contents)
           unmatched = []
-          defining_element_mappings.each do |mapping|
-            attribute, el_name = mapping.values_at(:attribute, :element)
-            defining_value = public_send(attribute)
-            unmatched << mapping unless property_contents[el_name] == defining_value
+          defining_property_mappings.each do |property_mapping|
+            defining_value = public_send( property_mapping.attribute_name )
+            unmatched << property_mapping unless property_contents[property_mapping.element_name] == defining_value
           end
           unmatched
         end
 
         def select_variable_property_contents(property_contents)
-          defining_element_names = defining_element_mappings.map{ |mapping| mapping[:element] }
+          defining_element_names = defining_property_mappings.map(&:element_name)
           property_contents.reject{ |name, content| defining_element_names.include?(name) }
         end
 
         def populate_instance_from_properties instance, variable_property_contents
           variable_property_contents.each do |name, content|
-            mapping = attr_element_mappings.detect{ |mapping| mapping[:element] == name }
+            mapping = attr_element_mappings.detect{ |mapping| mapping.element_name == name }
             next unless mapping
-            value = if mapping[:numbered_lines]
-              template = mapping[:numbered_lines]
-              [].tap{ |lines|
-                line_num = 1
-                while ( content.has_key?(key = template % line_num) )
-                  lines << content[key]
-                  line_num += 1
-                end
-              }
-            elsif mapping[:type] == :array
-              content.split('|')
-            else
-              content
-            end
-            attribute = mapping[:attribute]
-            instance.public_send "#{attribute}=", value
+            instance.public_send "#{mapping.attribute_name}=", mapping.value_from_element_content( content)
           end
         end
 
@@ -150,50 +134,28 @@ module ClientForPoslynx
       attr_accessor :source_data
 
       def xml_serialize
-        doc = Nokogiri::XML::Document.new
-        root = doc.create_element(self.class.root_element_name)
-        self.class.defining_element_mappings.each do |mapping|
-          content = self.class.public_send( mapping[:attribute] )
-          next unless content
-          element = doc.create_element( mapping[:element], nil, nil, content )
-          root.add_child element
-        end
-        self.class.attr_element_mappings.each do |mapping|
-          content = public_send( mapping[:attribute] )
-          next unless content
-          element = if mapping[:numbered_lines]
-            build_numbered_lines_xml_node( doc, mapping[:element], mapping[:numbered_lines], content )
-          elsif mapping[:type] == :array
-            build_vertical_bar_separated_list_node( doc, mapping[:element], content )
-          else
-            build_text_element_node( doc, mapping[:element], content )
-          end
-          root.add_child element
-        end
-        doc.root = root
-        doc.serialize(:save_with => Nokogiri::XML::Node::SaveOptions::AS_XML | Nokogiri::XML::Node::SaveOptions::NO_DECLARATION)
+        doc = Data::XmlDocument.with_root_element_name( self.class.root_element_name )
+        add_properties_to_xml_document doc
+        doc.serialize
       end
 
       private
 
-      def build_numbered_lines_xml_node(doc, element_name, line_template, content)
-        element = doc.create_element( element_name )
-        [content].flatten.each_with_index do |line_text, idx|
-          line_num = idx + 1
-          element_name = line_template % line_num
-          line_el = doc.create_element( element_name, nil, nil, line_text )
-          element.add_child line_el
+      def add_properties_to_xml_document(doc)
+        all_mappings.each do |mapping|
+          content = property_attribute_value( mapping )
+          next unless content
+          doc_content = mapping.xml_doc_content_from_client_content( content )
+          doc.add_property_content mapping.element_name, doc_content
         end
-        element
       end
 
-      def build_vertical_bar_separated_list_node(doc, element_name, content)
-        text = [content].flatten * '|'
-        doc.create_element( element_name, nil, nil, text )
+      def all_mappings
+        self.class.defining_property_mappings + self.class.attr_element_mappings
       end
 
-      def build_text_element_node(doc, element_name, content)
-        doc.create_element( element_name, nil, nil, "#{content}" )
+      def property_attribute_value( property )
+        public_send( property.attribute_name )
       end
 
     end

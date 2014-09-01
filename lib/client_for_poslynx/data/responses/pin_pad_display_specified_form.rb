@@ -8,7 +8,7 @@ module ClientForPoslynx
 
       class PinPadDisplaySpecifiedForm < AbstractResponse
 
-        defining_element_value attribute: :command, element: 'Command', value: 'PPSPECIFIEDFORM'
+        defining_property_value attribute: :command, element: 'Command', value: 'PPSPECIFIEDFORM'
         attr_element_mapping attribute: :button_response,  element: 'Response'
         attr_element_mapping attribute: :signature_data,  element: 'Signature'
 

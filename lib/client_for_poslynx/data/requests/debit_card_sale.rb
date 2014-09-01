@@ -8,7 +8,7 @@ module ClientForPoslynx
 
       class DebitCardSale < AbstractRequest
 
-        defining_element_value attribute: :command, element: 'Command', value: 'DCSALE'
+        defining_property_value attribute: :command, element: 'Command', value: 'DCSALE'
 
         attr_element_mapping attribute: :merchant_supplied_id, element: 'Id'
         attr_element_mapping attribute: :client_id,            element: 'ClientId'

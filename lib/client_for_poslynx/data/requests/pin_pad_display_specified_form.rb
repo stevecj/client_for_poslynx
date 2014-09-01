@@ -8,7 +8,7 @@ module ClientForPoslynx
 
       class PinPadDisplaySpecifiedForm < AbstractRequest
 
-        defining_element_value attribute: :command,   element: 'Command',  value: 'PPSPECIFIEDFORM'
+        defining_property_value attribute: :command,   element: 'Command',  value: 'PPSPECIFIEDFORM'
 
         attr_element_mapping attribute: :form_name,     element: 'FormName'
         attr_element_mapping attribute: :text_values,   element: 'Text',     type: :array
