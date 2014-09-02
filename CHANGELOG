@@ -6,3 +6,6 @@ Version 0.1.0
 
 Version 0.1.1
 - Add CHANGELOG file
+
+Version 0.2.0
+- Improve API for specifying attribute element mappings.
