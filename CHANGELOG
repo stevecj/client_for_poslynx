@@ -9,3 +9,6 @@ Version 0.1.1
 
 Version 0.2.0
 - Improve API for specifying attribute element mappings.
+
+Version 0.2.1
+- Relax Nokogiri gem version requirement.
