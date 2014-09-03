@@ -12,3 +12,6 @@ Version 0.2.0
 
 Version 0.2.1
 - Relax Nokogiri gem version requirement.
+
+Version 0.2.2
+- Specify Ruby version requirement of 1.9.3 or greater.
