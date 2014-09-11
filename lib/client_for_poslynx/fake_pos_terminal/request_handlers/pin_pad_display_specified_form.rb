@@ -39,7 +39,7 @@ module ClientForPoslynx
               't%d : %s' % [value_num, text]
             }
           else
-            text_values
+            request.text_values
           end
         end
       end

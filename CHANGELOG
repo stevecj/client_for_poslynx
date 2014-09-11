@@ -15,3 +15,7 @@ Version 0.2.1
 
 Version 0.2.2
 - Specify Ruby version requirement of 1.9.3 or greater.
+
+Version 0.2.3
+- Fix bug: Fake termonal script crashes with stak overflow when
+  a single text value is supplied.
