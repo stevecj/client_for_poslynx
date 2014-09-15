@@ -5,7 +5,7 @@ module ClientForPoslynx
     module RequestHandlers
 
       class AbstractHandler
-        attr_reader :request, :response, :user_interface
+        attr_reader :original_request, :request, :response, :user_interface
 
         def self.call(*args)
           instance = new(*args)
@@ -14,8 +14,9 @@ module ClientForPoslynx
         end
 
         def initialize(request, user_interface)
-          @request        = request
-          @user_interface = user_interface
+          @original_request = request
+          @request          = request.dup
+          @user_interface   = user_interface
         end
 
         def call

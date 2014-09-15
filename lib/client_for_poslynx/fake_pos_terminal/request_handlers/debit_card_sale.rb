@@ -14,6 +14,7 @@ module ClientForPoslynx
         end
 
         def handle_supported_source_request
+          request.cash_back = '0.00' if "#{request.cash_back}".strip.empty?
           response.card_number_last_4 = get_card_swipe
           response.input_method = 'SWIPED'
           confirmed = get_confirmation

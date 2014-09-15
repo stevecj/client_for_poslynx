@@ -17,5 +17,9 @@ Version 0.2.2
 - Specify Ruby version requirement of 1.9.3 or greater.
 
 Version 0.2.3
-- Fix bug: Fake termonal script crashes with stak overflow when
+- Fix bug: Fake terminal script crashes with stak overflow when
   a single text value is supplied.
+
+Version 0.2.4
+- Fix bug: Fake terminal script crashes during user interaction
+  for a debit sale request without a specified cash back amount.
