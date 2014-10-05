@@ -23,6 +23,7 @@ module ClientForPoslynx
         attr_element_mapping attribute: :transaction_date,         element: 'TransactionDate'
         attr_element_mapping attribute: :transaction_time,         element: 'TransactionTime'
         attr_element_mapping attribute: :input_method,             element: 'InputMethod'
+        attr_element_mapping attribute: :signature,                element: 'Signature'
         attr_element_mapping attribute: :receipt,                  element: 'Receipt',         numbered_lines: 'Receipt%d'
         attr_element_mapping attribute: :customer_receipt,         element: 'ReceiptCustomer', numbered_lines: 'Receipt%d'
 

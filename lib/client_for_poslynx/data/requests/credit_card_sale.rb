@@ -20,6 +20,7 @@ module ClientForPoslynx
         attr_element_mapping attribute: :track_1,              element: 'Track1'
         attr_element_mapping attribute: :card_number,          element: 'CardNumber'
         attr_element_mapping attribute: :expiry_date,          element: 'ExpiryDate'
+        attr_element_mapping attribute: :capture_signature,    element: 'ReqPPSigCapture'
 
       end
 

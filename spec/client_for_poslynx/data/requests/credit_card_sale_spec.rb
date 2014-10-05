@@ -27,6 +27,7 @@ module ClientForPoslynx
       subject.track_2              = 'the-two'
       subject.card_number          = 'the-number'
       subject.expiry_date          = 'the-expiration'
+      subject.capture_signature    = 'the-capture-signature'
 
       expected_xml =
         "<PLRequest>" +
@@ -42,6 +43,7 @@ module ClientForPoslynx
           "<Track1>the-one</Track1>" +
           "<CardNumber>the-number</CardNumber>" +
           "<ExpiryDate>the-expiration</ExpiryDate>" +
+          "<ReqPPSigCapture>the-capture-signature</ReqPPSigCapture>" +
         "</PLRequest>\n"
 
       expect( subject.xml_serialize ).to eq( expected_xml )
@@ -75,22 +77,24 @@ module ClientForPoslynx
   <Track1>the-one</Track1>
   <CardNumber>the-number</CardNumber>
   <ExpiryDate>the-expiration</ExpiryDate>
+  <ReqPPSigCapture>the-capture-signature</ReqPPSigCapture>
 </PLRequest>
       XML
 
       actual_instance = described_class.xml_deserialize xml_input
 
-      expect( actual_instance.client_mac           ).to eq( 'the-MAC'         )
-      expect( actual_instance.merchant_supplied_id ).to eq( 'the-transaction' )
-      expect( actual_instance.client_id            ).to eq( 'the-client'      )
-      expect( actual_instance.tax_amount           ).to eq( 'the-tax'         )
-      expect( actual_instance.customer_code        ).to eq( 'the-code'        )
-      expect( actual_instance.amount               ).to eq( 'the-amount'      )
-      expect( actual_instance.input_source         ).to eq( 'the-source'      )
-      expect( actual_instance.track_1              ).to eq( 'the-one'         )
-      expect( actual_instance.track_2              ).to eq( 'the-two'         )
-      expect( actual_instance.card_number          ).to eq( 'the-number'      )
-      expect( actual_instance.expiry_date          ).to eq( 'the-expiration'  )
+      expect( actual_instance.client_mac           ).to eq( 'the-MAC'               )
+      expect( actual_instance.merchant_supplied_id ).to eq( 'the-transaction'       )
+      expect( actual_instance.client_id            ).to eq( 'the-client'            )
+      expect( actual_instance.tax_amount           ).to eq( 'the-tax'               )
+      expect( actual_instance.customer_code        ).to eq( 'the-code'              )
+      expect( actual_instance.amount               ).to eq( 'the-amount'            )
+      expect( actual_instance.input_source         ).to eq( 'the-source'            )
+      expect( actual_instance.track_1              ).to eq( 'the-one'               )
+      expect( actual_instance.track_2              ).to eq( 'the-two'               )
+      expect( actual_instance.card_number          ).to eq( 'the-number'            )
+      expect( actual_instance.expiry_date          ).to eq( 'the-expiration'        )
+      expect( actual_instance.capture_signature    ).to eq( 'the-capture-signature' )
     end
 
     it "accepts a canonical visitor" do
