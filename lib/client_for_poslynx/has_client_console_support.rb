@@ -81,6 +81,12 @@ module ClientForPoslynx
         }
       end
 
+      def example_pin_pad_get_signature
+        ClientForPoslynx::Data::Requests::PinPadGetSignature.new.tap { |req|
+          assign_common_example_request_attrs_to req
+        }
+      end
+
       private
 
       def get_response_from( connection )
