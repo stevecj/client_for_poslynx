@@ -45,6 +45,9 @@ lib/client_for_poslynx/has_client_colsole_support.rb file
 provides a good example of how to use the facilities that this
 gem provides.
 
+Some releases may also include experimental features that must
+be separately loaded by requiring "client_for_poslynx/experimental'.
+
 ## Known Limitations
 
 * Only a subset of the possible messages and elements is supported.

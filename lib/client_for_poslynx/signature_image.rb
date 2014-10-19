@@ -2,6 +2,7 @@
 
 require_relative 'signature_image/move'
 require_relative 'signature_image/draw'
+require_relative 'signature_image/to_svg_converter'
 
 module ClientForPoslynx
 
@@ -46,6 +47,23 @@ module ClientForPoslynx
 
     def <<(step)
       sequence << step
+    end
+
+    def each_step
+      sequence.each do |step| ; yield step ; end
+    end
+
+    def shape_step_groups
+      groups = []
+      group = []
+      sequence.each do |step|
+        if SignatureImage::Move === step
+          group = []
+          groups << group
+        end
+        group << step
+      end
+      groups
     end
 
     def serialize_legacy
