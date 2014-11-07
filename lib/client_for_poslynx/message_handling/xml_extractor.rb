@@ -23,11 +23,12 @@ module ClientForPoslynx
         root_name = nil
         while true
           line = stream.gets
+          puts line
           message << line
-          if (! root_name) && line =~ /^<([A-Za-z_][^\s>]*)[ >]/
+          if (! root_name) && line =~ /^(?:<\?.+?\?>)?<([A-Za-z_][^\s>]*)[ >]/
             root_name = $1
           end
-          break if root_name && line =~ /<\/#{root_name}\s*>$/
+          break if root_name && line =~ /<\/#{root_name}\s*>\s*$/
         end
         message
       end

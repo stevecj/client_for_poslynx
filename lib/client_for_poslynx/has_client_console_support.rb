@@ -22,7 +22,7 @@ module ClientForPoslynx
         conn = TCPSocket.new( config.host, config.port )
         conn.puts request.xml_serialize
         response = get_response_from( conn )
-        conn.close unless conn.eof?
+        conn.close unless conn.closed?
         response
       end
 
