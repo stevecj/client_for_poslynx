@@ -23,3 +23,9 @@ Version 0.2.3
 Version 0.2.4
 - Fix bug: Fake terminal script crashes during user interaction
   for a debit sale request without a specified cash back amount.
+
+Version 0.2.4
+- Introduce experimental signature image parsing and conversion
+  to SVG.
+- Fix bug: New format of POSLynx response message XML was causing
+  client to hang.
