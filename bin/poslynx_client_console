@@ -12,8 +12,13 @@ end
 # file name for input.
 $*.replace []
 
-# The only option we car about is --help, so we either show usage
-# for --help or because an unrecognized option was given.
+# Take --client_mac=<hexadecimal-value> if present.
+client_mac_opts = option_args.select{ |opt| opt =~ /^--client_mac=[0-9a-fA-F]+$/ }
+option_args -= client_mac_opts
+client_mac_option = client_mac_opts.last
+
+# The only remaining option we care about is --help, so we either
+# show usage for --help or because an unrecognized option was given.
 show_usage = option_args.length > 0
 
 # Should have exactly 1 value argument for the address + port number.
@@ -33,19 +38,27 @@ if show_usage
 
   puts <<-EOS
 
-Usage: poslynx_client_console [<host>]:<port-number> Host is the
-domain name or IP address of the POSLynx or fake POS terminal
-host.  If this is not supplied, then 127.0.0.1 is assumed.
+Usage: poslynx_client_console [<host>]:<port-number>
+
+Host is the domain name or IP address of the POSLynx or fake POS
+terminal host.  If this is not supplied, then 127.0.0.1 is
+assumed.
+
+Options:
+
+  --client_mac=<hexadecimal>  The client MAC value to be assigned
+                              to example-request objects.
+
+  --help                      Prints this usage information.
 
 Opens an interactive Ruby shell with a globally acccessible
 poslynx_client method that returns an object with conveniences
 for making requests to a POSLynx or to your fake
 POSLynx+terminal host.
 
-For example, you might execute the following commands from
+For example, you might execute the following command from
 within the console...
 
-  poslynx_client.client_mac_for_examples = '123456789012'
   resp = poslynx_client.send_request( poslynx_client.example_credit_card_sale_request )
 
 To see what else the poslynx_client object provides, see the
@@ -69,6 +82,10 @@ else
   config = poslynx_client.config
   config.host = host
   config.port = port
+
+  if client_mac_option
+    config.client_mac_for_examples = client_mac_option.split('=').last
+  end
 
   IRB.start
 

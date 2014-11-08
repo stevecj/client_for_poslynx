@@ -12,8 +12,6 @@ module ClientForPoslynx
     end
 
     class Client
-      attr_accessor :client_mac_for_examples
-
       def config
         @config ||= Config.new
       end
@@ -95,13 +93,13 @@ module ClientForPoslynx
       end
 
       def assign_common_example_request_attrs_to(request)
-        request.client_mac = client_mac_for_examples if client_mac_for_examples
+        request.client_mac = config.client_mac_for_examples if config.client_mac_for_examples
       end
 
     end
 
     class Config
-      attr_accessor :host, :port
+      attr_accessor :host, :port, :client_mac_for_examples
     end
 
   end
