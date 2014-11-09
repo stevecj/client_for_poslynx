@@ -66,7 +66,7 @@ module ClientForPoslynx
 
       it "serializes data in legacy format" do
         actual_serialized = subject.serialize_legacy
-        actual_bit_sequence = BitSequence.from_uuencoded( actual_serialized )
+        actual_bit_sequence = BitSequence.from_base64( actual_serialized )
 
         expect( actual_bit_sequence ).to eq( bit_sequence )
       end
@@ -75,7 +75,7 @@ module ClientForPoslynx
     context "deserializing" do
       subject{ described_class.new(serialized_data) }
       let( :serialized_data ) {
-        bit_sequence.uuencode
+        bit_sequence.base64_encode
       }
 
       it "deserializes data from legacy format" do

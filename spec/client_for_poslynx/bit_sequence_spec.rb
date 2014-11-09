@@ -130,16 +130,16 @@ module ClientForPoslynx
         to raise_exception( klass::NumberOutOfBounds )
     end
 
-    it "can be build by unpacking bits from a uuencoded string" do
-      actual   = klass.from_uuencoded( "&,C(R,C(R\n" )
+    it "can be build by unpacking bits from a base-64 encoded string" do
+      actual   = klass.from_base64( "MjIyMjIy" )
       expected = klass ^ "\x32" * 6
 
       expect( actual ).to eq( expected )
     end
 
-    it "can be packed to a uuencoded string" do
+    it "can be packed to a base-64 string" do
       bit_seq = klass ^ "\x32" * 6
-      expect( bit_seq.uuencode ).to eq( "&,C(R,C(R\n" )
+      expect( bit_seq.base64_encode ).to eq( "MjIyMjIy" )
     end
 
   end

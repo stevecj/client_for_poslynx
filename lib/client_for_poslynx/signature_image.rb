@@ -11,7 +11,7 @@ module ClientForPoslynx
     class << self
 
       def deserialize(serialized_data)
-        packed_binary = uudecode( serialized_data )
+        packed_binary = base64_decode( serialized_data )
         bit_seq = ClientForPoslynx::BitSequence.from_packed_bits( packed_binary )
 
         sig_image = new
@@ -26,8 +26,8 @@ module ClientForPoslynx
         sig_image
       end
 
-      def uudecode(uuencoded)
-        uuencoded.unpack('u').first
+      def base64_decode(encoded)
+        encoded.unpack('m').first
       end
 
     end
@@ -74,7 +74,7 @@ module ClientForPoslynx
       sequence.each do |step|
         bit_seq << step.to_bit_sequence
       end
-      bit_seq.uuencode
+      bit_seq.base64_encode
     end
 
     protected

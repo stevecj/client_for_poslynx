@@ -48,8 +48,8 @@ module ClientForPoslynx
         magnitude_seq.unshift( sign_bit )
       end
 
-      def from_uuencoded(uuencoded)
-        packed_bits = uuencoded.unpack('u').first
+      def from_base64(encoded)
+        packed_bits = encoded.unpack('m0').first
         from_packed_bits( packed_bits )
       end
     end
@@ -81,8 +81,8 @@ module ClientForPoslynx
       digits_string
     end
 
-    def uuencode
-      [ to_packed_bits ].pack('u')
+    def base64_encode
+      [ to_packed_bits ].pack('m0')
     end
 
     def length
