@@ -15,12 +15,6 @@ module ClientForPoslynx
       def initialize(root_element_name)
         @root_element_name = root_element_name
       end
-
-#      def parse(source_xml)
-#        xml_document = XmlDocument.new( source_xml )
-#        xml_document.property_element_values
-#      end
-
     end
 
   end
