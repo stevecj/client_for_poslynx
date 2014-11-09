@@ -27,6 +27,13 @@ module ClientForPoslynx
         attr_element_mapping attribute: :receipt,                  element: 'Receipt',         numbered_lines: 'Receipt%d'
         attr_element_mapping attribute: :customer_receipt,         element: 'ReceiptCustomer', numbered_lines: 'Receipt%d'
 
+        def signature=(value)
+          if value =~ /^<!\[CDATA\[(.*)\]\]>$/
+            @signature = $1
+          else
+            @signature = value
+          end
+        end
       end
 
     end

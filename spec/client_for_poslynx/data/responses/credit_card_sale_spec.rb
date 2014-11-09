@@ -6,6 +6,17 @@ module ClientForPoslynx
 
     it_behaves_like "a data object"
 
+    # At least one revision of the POSLynx returns signature
+    # data surrounded by &lt[CDATA[...]]&gt which is obviously
+    # supposed to be CDATA encoding in XML. Since the angle
+    # brackets are esacped, however, the element contains the
+    # CDATA-encoded XML as its text value instead of the
+    # intended content.
+    it "repairs malformed signature image CDATA" do
+      subject.signature = "<![CDATA[ABC123]]>"
+      expect( subject.signature ).to eq( 'ABC123' )
+    end
+
     it "Serializes to a PLResponse XML document for a CCSALE response" do
       expected_xml = "<PLResponse><Command>CCSALE</Command></PLResponse>\n"
 
