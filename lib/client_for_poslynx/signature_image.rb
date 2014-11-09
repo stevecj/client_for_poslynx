@@ -1,5 +1,6 @@
 # coding: utf-8
 
+require_relative 'signature_image/metrics'
 require_relative 'signature_image/move'
 require_relative 'signature_image/draw'
 require_relative 'signature_image/to_svg_converter'
@@ -32,9 +33,12 @@ module ClientForPoslynx
 
     end
 
+    attr_accessor :metrics
+
     def ==(other)
       return false unless self.class === other
-      sequence == other.sequence
+      metrics == other.metrics &&
+        sequence == other.sequence
     end
 
     def move(*args)

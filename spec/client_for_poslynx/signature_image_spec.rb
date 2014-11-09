@@ -44,7 +44,7 @@ module ClientForPoslynx
       '000'                            # remaining bits in last byte
     }
 
-    it "is unequal to another instance with a different sequence of steps" do
+    it "is unequal to another instance with a different sequence of steps and no metrics" do
       subject = build_example_image
 
       other_sig = described_class.new
@@ -54,9 +54,41 @@ module ClientForPoslynx
       expect( subject ).not_to eq( other_sig )
     end
 
-    it "is equal to another instance with the same sequence of steps" do
+    it "is unequal to another instance with a different sequence of steps and same metrics" do
+      subject = build_example_image
+      subject.metrics = SignatureImage::Metrics.new([1000, 250], [6080, 1520])
+
+      other_sig = described_class.new
+      other_sig.metrics = SignatureImage::Metrics.new([1000, 250], [6080, 1520])
+      other_sig.move 10, 120
+      other_sig.draw  0, -29
+
+      expect( subject ).not_to eq( other_sig )
+    end
+
+    it "is unequal to another instance with the same sequence of steps and different metrics" do
+      subject   = build_example_image
+      subject.metrics = SignatureImage::Metrics.new([1000, 250], [6080, 1520])
+
+      other_sig = build_example_image
+      other_sig.metrics = SignatureImage::Metrics.new([999, 250], [6080, 1520])
+
+      expect( subject ).not_to eq( other_sig )
+    end
+
+    it "is equal to another instance with the same sequence of steps and no metrics" do
       subject   = build_example_image
       other_sig = build_example_image
+
+      expect( subject ).to eq( other_sig )
+    end
+
+    it "is equal to another instance with the same sequence of steps and same metrics" do
+      subject   = build_example_image
+      subject.metrics = SignatureImage::Metrics.new([1000, 250], [6080, 1520])
+
+      other_sig = build_example_image
+      other_sig.metrics = SignatureImage::Metrics.new([1000, 250], [6080, 1520])
 
       expect( subject ).to eq( other_sig )
     end
