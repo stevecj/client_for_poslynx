@@ -19,11 +19,11 @@ module ClientForPoslynx
       }
     end
 
-    let( :bit_sequence ) {
-      BitSequence.from_bit_digits( bit_digit_sequence )
+    let( :legacy_bit_sequence ) {
+      BitSequence.from_bit_digits( legacy_bit_digit_sequence )
     }
 
-    let( :bit_digit_sequence ) {
+    let( :legacy_bit_digit_sequence ) {
       # TODO: Currently assuming that deltas for move are
       # expressed as sign bit and magnitude, where sign bit
       # of 1 means negative. Documentation is unclear about
@@ -33,7 +33,7 @@ module ClientForPoslynx
       # need to do a test, and find out whether this
       # assumption is true or not.
       
-      '1' + '0000001010' + '1111000' + # move  10, 120
+      '1' + '0000001010' + '1111000' + # move  10, 120 (10-bit, 7-bit)
       '0' + '000000' + '111110' +      # draw   0, -30
       '0' + '000000' + '111110' +      # draw   0, -30
       '0' + '000000' + '111110' +      # draw   0, -30
@@ -42,6 +42,67 @@ module ClientForPoslynx
       '0' + '111001' + '011001' +      # draw -25,  25
       '0' + '000000' + '100010' +      # draw   0,  -2
       '000'                            # remaining bits in last byte
+    }
+
+    let( :enhanced_narrow_bit_sequence ) {
+      BitSequence.from_bit_digits( enhanced_narrow_bit_digit_sequence )
+    }
+
+    let( :enhanced_narrow_bit_digit_sequence ) {
+      # TODO: Currently assuming that deltas for move are
+      # expressed as sign bit and magnitude, where sign bit
+      # of 1 means negative. Documentation is unclear about
+      # this though except to say that there is a sign bit,
+      # and that values can range from -31 to 31.
+      # Once I can connect to the virtual POSLynx again, I
+      # need to do a test, and find out whether this
+      # assumption is true or not.
+      
+      '00000000' +                        # 1st byte all 0s: Indicates enhanced format.
+      '00001000' +                        # Header content length: 8 bytes
+      '0000010000000000' +                # X scaled resolution: 1024 (maximum to be treated as narrow)
+      '0000000110000000' +                # Y scaled resolution: 384
+      '0001111101000000' +                # X physical size in 0.01 mm units: 8000
+      '0000101110111000' +                # Y physical size in 0.01 mm units: 3000
+      '1' + '0000001010' + '0001111000' + # move  10, 120 (10-bit, 10-bit)
+      '0' + '000000' + '111110' +         # draw   0, -30
+      '0' + '000000' + '111110' +         # draw   0, -30
+      '0' + '000000' + '111110' +         # draw   0, -30
+      '0' + '000000' + '110100' +         # draw   0, -20
+      '0' + '011110' + '011110' +         # draw  30,  30
+      '0' + '111001' + '011001' +         # draw -25,  25
+      '0' + '000000' + '100010'           # draw   0,  -2
+    }
+
+    let( :enhanced_wide_bit_sequence ) {
+      BitSequence.from_bit_digits( enhanced_wide_bit_digit_sequence )
+    }
+
+    let( :enhanced_wide_bit_digit_sequence ) {
+      # TODO: Currently assuming that deltas for move are
+      # expressed as sign bit and magnitude, where sign bit
+      # of 1 means negative. Documentation is unclear about
+      # this though except to say that there is a sign bit,
+      # and that values can range from -31 to 31.
+      # Once I can connect to the virtual POSLynx again, I
+      # need to do a test, and find out whether this
+      # assumption is true or not.
+      
+      '00000000' +                         # 1st byte all 0s: Indicates enhanced format.
+      '00001000' +                         # Header content length: 8 bytes
+      '0000010000000001' +                 # X scaled resolution: 1025 (minimum to be treated as wide)
+      '0000000110011010' +                 # Y scaled resolution: 410
+      '0001111101000000' +                 # X physical size in 0.01 mm units: 8000
+      '0000110010000000' +                 # Y physical size in 0.01 mm units: 3200
+      '1' + '00000001010' + '0001111000' + # move  10, 120 (10-bit, 11-bit)
+      '0' + '000000' + '111110' +          # draw   0, -30
+      '0' + '000000' + '111110' +          # draw   0, -30
+      '0' + '000000' + '111110' +          # draw   0, -30
+      '0' + '000000' + '110100' +          # draw   0, -20
+      '0' + '011110' + '011110' +          # draw  30,  30
+      '0' + '111001' + '011001' +          # draw -25,  25
+      '0' + '000000' + '100010' +          # draw   0,  -2
+      '0000000'                            # 7 remaining bits in last byte
     }
 
     it "is unequal to another instance with a different sequence of steps and no metrics" do
@@ -93,28 +154,90 @@ module ClientForPoslynx
       expect( subject ).to eq( other_sig )
     end
 
-    context "serializing" do
-      subject{ build_example_image }
+    context "legacy serialized format" do
+      context "serializing" do
+        subject{ build_example_image }
 
-      it "serializes data in legacy format" do
-        actual_serialized = subject.serialize_legacy
-        actual_bit_sequence = BitSequence.from_base64( actual_serialized )
+        it "serializes data" do
+          actual_serialized = subject.serialize
+          actual_bit_sequence = BitSequence.from_base64( actual_serialized )
 
-        expect( actual_bit_sequence ).to eq( bit_sequence )
+          expect( actual_bit_sequence ).to eq( legacy_bit_sequence )
+        end
+      end
+
+      context "deserializing" do
+        subject{ described_class.new(serialized_data) }
+        let( :serialized_data ) {
+          legacy_bit_sequence.base64_encode
+        }
+
+        it "deserializes data" do
+          actual = described_class.deserialize( serialized_data )
+          expected = build_example_image
+
+          expect( actual ).to eq( expected )
+        end
       end
     end
 
-    context "deserializing" do
-      subject{ described_class.new(serialized_data) }
-      let( :serialized_data ) {
-        bit_sequence.base64_encode
-      }
+    context "enhanced format with narrow resolution" do
+      context "serializing" do
+        subject{ build_example_image.tap{ |img|
+          img.metrics = SignatureImage::Metrics.new([1024,384], [8000,3000])
+        } }
 
-      it "deserializes data from legacy format" do
-        actual = described_class.deserialize( serialized_data )
-        expected = build_example_image
+        it "serializes data" do
+          actual_serialized = subject.serialize
+          actual_bit_sequence = BitSequence.from_base64( actual_serialized )
 
-        expect( actual ).to eq( expected )
+          expect( actual_bit_sequence ).to eq( enhanced_narrow_bit_sequence )
+        end
+      end
+
+      context "deserializing" do
+        subject{ described_class.new(serialized_data) }
+        let( :serialized_data ) {
+          enhanced_narrow_bit_sequence.base64_encode
+        }
+
+        it "deserializes data" do
+          actual = described_class.deserialize( serialized_data )
+          expected = build_example_image
+          expected.metrics = SignatureImage::Metrics.new([1024,384], [8000,3000])
+
+          expect( actual ).to eq( expected )
+        end
+      end
+    end
+
+    context "enhanced format with wide resolution" do
+      context "serializing" do
+        subject{ build_example_image.tap{ |img|
+          img.metrics = SignatureImage::Metrics.new([1025,410], [8000,3200])
+        } }
+
+        it "serializes data" do
+          actual_serialized = subject.serialize
+          actual_bit_sequence = BitSequence.from_base64( actual_serialized )
+
+          expect( actual_bit_sequence ).to eq( enhanced_wide_bit_sequence )
+        end
+      end
+
+      context "deserializing" do
+        subject{ described_class.new(serialized_data) }
+        let( :serialized_data ) {
+          enhanced_wide_bit_sequence.base64_encode
+        }
+
+        it "deserializes data" do
+          actual = described_class.deserialize( serialized_data )
+          expected = build_example_image
+          expected.metrics = SignatureImage::Metrics.new([1025,410], [8000,3200])
+
+          expect( actual ).to eq( expected )
+        end
       end
     end
 
