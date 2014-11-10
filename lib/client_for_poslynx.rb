@@ -3,6 +3,8 @@
 require "client_for_poslynx/version"
 require "client_for_poslynx/data"
 require "client_for_poslynx/message_handling"
+require "client_for_poslynx/bit_sequence"
+require "client_for_poslynx/signature_image"
 
 module ClientForPoslynx
 
