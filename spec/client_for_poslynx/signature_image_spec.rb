@@ -25,15 +25,6 @@ module ClientForPoslynx
     }
 
     let( :legacy_bit_digit_sequence ) {
-      # TODO: Currently assuming that deltas for move are
-      # expressed as sign bit and magnitude, where sign bit
-      # of 1 means negative. Documentation is unclear about
-      # this though except to say that there is a sign bit,
-      # and that values can range from -31 to 31.
-      # Once I can connect to the virtual POSLynx again, I
-      # need to do a test, and find out whether this
-      # assumption is true or not.
-      
       '1' + '0000010100' + '1111000' + # move  20, 120 (10-bit, 7-bit)
       '0' + '001010' + '100010' +      # draw  10, -30
       '0' + '001010' + '100010' +      # draw  10, -30
@@ -51,15 +42,6 @@ module ClientForPoslynx
     }
 
     let( :enhanced_narrow_bit_digit_sequence ) {
-      # TODO: Currently assuming that deltas for move are
-      # expressed as sign bit and magnitude, where sign bit
-      # of 1 means negative. Documentation is unclear about
-      # this though except to say that there is a sign bit,
-      # and that values can range from -31 to 31.
-      # Once I can connect to the virtual POSLynx again, I
-      # need to do a test, and find out whether this
-      # assumption is true or not.
-      
       '00000000' +                        # 1st byte all 0s: Indicates enhanced format.
       '00001000' +                        # Header content length: 8 bytes
       '0000010000000000' +                # X scaled resolution: 1024 (maximum to be treated as narrow)
@@ -83,15 +65,6 @@ module ClientForPoslynx
     }
 
     let( :enhanced_wide_bit_digit_sequence ) {
-      # TODO: Currently assuming that deltas for move are
-      # expressed as sign bit and magnitude, where sign bit
-      # of 1 means negative. Documentation is unclear about
-      # this though except to say that there is a sign bit,
-      # and that values can range from -31 to 31.
-      # Once I can connect to the virtual POSLynx again, I
-      # need to do a test, and find out whether this
-      # assumption is true or not.
-      
       '00000000' +                         # 1st byte all 0s: Indicates enhanced format.
       '00001000' +                         # Header content length: 8 bytes
       '0000010000000001' +                 # X scaled resolution: 1025 (minimum to be treated as wide)
