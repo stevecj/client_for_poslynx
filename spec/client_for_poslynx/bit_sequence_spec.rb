@@ -69,7 +69,7 @@ module ClientForPoslynx
       expect( taken      ).to eq( expected_taken     )
     end
 
-    it "can have another bit sequence unshifted onto its fron" do
+    it "can have another bit sequence unshifted onto its front" do
       bit_target = klass / '000111000'
       bit_target.unshift klass / '111000111'
 
@@ -89,30 +89,23 @@ module ClientForPoslynx
         raise_exception( klass::TooManyBitsLong, /\b64\b/ )
     end
 
-    it "can be (big-endian) interpreted as the sign-bit and magnitude of an integer" do
-      expect( ( klass / '000'                  ).as_sign_and_magnitude ).to eq(   0 )
-      expect( ( klass / '0111000011110000'     ).as_sign_and_magnitude ).to eq(   0x70F0 )
-      expect( ( klass / '1111000011110000'     ).as_sign_and_magnitude ).to eq( - 0x70F0 )
-      expect( ( klass / ('1' + '11110000' * 8) ).as_sign_and_magnitude ).to eq( - 0xF0F0F0F0F0F0F0F0 )
+    it "can be (big-endian) interpreted as a 2s-complement signed integer" do
+      expect( ( klass / '000'              ).as_signed ).to eq(   0 )
+      expect( ( klass / '0111000011110000' ).as_signed ).to eq(   0x70F0 )
+      expect( ( klass / '1000111100010000' ).as_signed ).to eq( - 0x70F0 )
+      expect( ( klass / ('11110000' * 8)   ).as_signed ).to eq( - 0x0F0F0F0F0F0F0F10 )
     end
 
-    it "fails to be interpreted as sign-bit and magnitude if longer than 65 bits" do
-      bit_seq = klass / ( '0' + '11110000' * 8 + '1' )
-      expect{ bit_seq.as_sign_and_magnitude }.
-        to raise_exception( klass::TooManyBitsLong, /\b65\b/ )
+    it "fails to be interpreted as 2s complement if longer than 64 bits" do
+      bit_seq = klass / ( '0' + '11110000' * 8 )
+      expect{ bit_seq.as_signed }.
+        to raise_exception( klass::TooManyBitsLong, /\b64\b/ )
     end
 
     it "can be constructed as the big-endian representation of an unsigned integer" do
       expect( klass.from_unsigned(  0,             9 ) ).to eq( klass / ( '0' * 9   ) )
       expect( klass.from_unsigned(  0x23,          7 ) ).to eq( klass / ( '0100011' ) )
       expect( klass.from_unsigned( (2 ** 64) - 1, 64 ) ).to eq( klass / ( '1' * 64  ) )
-    end
-
-    it "can be constructed as the sign-bit and big-endian magnitude representation of an integer" do
-      expect( klass.from_sign_and_magnitude_of(   0,            10 ) ).to eq( klass / ( '0' * 10   ) )
-      expect( klass.from_sign_and_magnitude_of(   0x23,          8 ) ).to eq( klass / ( '00100011' ) )
-      expect( klass.from_sign_and_magnitude_of( - 0x23,          8 ) ).to eq( klass / ( '10100011' ) )
-      expect( klass.from_sign_and_magnitude_of( -(2 ** 64) + 1, 65 ) ).to eq( klass / ( '1' * 65   ) )
     end
 
     it "fails to be constructed as a longer than 64-bit representation of an unsigned number" do
@@ -127,6 +120,28 @@ module ClientForPoslynx
 
     it "fails to be constructed as an under-sized representation of an unsigned number" do
       expect{ klass.from_unsigned(0x23, 5) }.
+        to raise_exception( klass::NumberOutOfBounds )
+    end
+
+    it "can be constructed as the big-endian, 2's complement representation of a signed integer" do
+      expect( klass.from_signed(   0,         9 ) ).to eq( klass / ( '0' * 9   ) )
+      expect( klass.from_signed(  -0x23,      7 ) ).to eq( klass / ( '1011101' ) )
+      expect( klass.from_signed(  -1,         4 ) ).to eq( klass / ( '1111'    ) )
+      expect( klass.from_signed( -(2 ** 63), 64 ) ).to eq( klass / ( '1' + '0' * 63  ) )
+    end
+
+    it "fails to be constructed as a longer than 64-bit representation of a signed number" do
+      expect{ klass.from_signed(0x23, 65) }.
+        to raise_exception( klass::TooManyBitsLong, /\b64\b/ )
+    end
+
+    it "fails to be constructed as a  an under-sized representation a negative signed number" do
+      expect{ klass.from_signed(-0x23, 6) }.
+        to raise_exception( klass::NumberOutOfBounds )
+    end
+
+    it "fails to be constructed as an under-sized representation of a positive signed number" do
+      expect{ klass.from_signed(0x23, 6) }.
         to raise_exception( klass::NumberOutOfBounds )
     end
 

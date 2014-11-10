@@ -38,9 +38,10 @@ module ClientForPoslynx
       private
 
       def apply_document_characteristics
-        svg_element['width'              ] = '67.17mm'
-        svg_element['height'             ] = '13.434mm'
-        svg_element['viewBox'            ] = '0 0 640 128'
+        metrics = signature_image.metrics || SignatureImage::Metrics.new([6717, 1343], [640, 128])
+        svg_element['width'              ] = '%fmm' % ( metrics.size_in_dum[0] * 0.01 )
+        svg_element['height'             ] = '%fmm' % ( metrics.size_in_dum[1] * 0.01 )
+        svg_element['viewBox'            ] = '0 0 %d %d' % metrics.resolution
         svg_element['preserveAspectRatio'] = 'none'
       end
 

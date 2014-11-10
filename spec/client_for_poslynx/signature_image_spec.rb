@@ -8,14 +8,15 @@ module ClientForPoslynx
 
     def build_example_image
       described_class.new.tap { |si|
-        si.move  10, 120
-        si.draw   0, -30
-        si.draw   0, -30
-        si.draw   0, -30
-        si.draw   0, -20
-        si.draw  30,  30
-        si.draw -25,  25
-        si.draw   0,  -2
+        si.move  20, 120
+        si.draw  10, -30
+        si.draw  10, -30
+        si.draw  10, -30
+        si.draw  10,  30
+        si.draw  10,  30
+        si.draw  10,  30
+        si.move  35,  75
+        si.draw  30,  -1
       }
     end
 
@@ -33,15 +34,16 @@ module ClientForPoslynx
       # need to do a test, and find out whether this
       # assumption is true or not.
       
-      '1' + '0000001010' + '1111000' + # move  10, 120 (10-bit, 7-bit)
-      '0' + '000000' + '111110' +      # draw   0, -30
-      '0' + '000000' + '111110' +      # draw   0, -30
-      '0' + '000000' + '111110' +      # draw   0, -30
-      '0' + '000000' + '110100' +      # draw   0, -20
-      '0' + '011110' + '011110' +      # draw  30,  30
-      '0' + '111001' + '011001' +      # draw -25,  25
-      '0' + '000000' + '100010' +      # draw   0,  -2
-      '000'                            # remaining bits in last byte
+      '1' + '0000010100' + '1111000' + # move  20, 120 (10-bit, 7-bit)
+      '0' + '001010' + '100010' +      # draw  10, -30
+      '0' + '001010' + '100010' +      # draw  10, -30
+      '0' + '001010' + '100010' +      # draw  10, -30
+      '0' + '001010' + '011110' +      # draw  10,  30
+      '0' + '001010' + '011110' +      # draw  10,  30
+      '0' + '001010' + '011110' +      # draw  10,  30
+      '1' + '0000100011' + '1001011' + # move  35,  75  64+8+2+1
+      '0' + '011110' + '111111' +      # draw  30,  -1
+      '0'                              # remaining bit in last byte
     }
 
     let( :enhanced_narrow_bit_sequence ) {
@@ -64,14 +66,16 @@ module ClientForPoslynx
       '0000000110000000' +                # Y scaled resolution: 384
       '0001111101000000' +                # X physical size in 0.01 mm units: 8000
       '0000101110111000' +                # Y physical size in 0.01 mm units: 3000
-      '1' + '0000001010' + '0001111000' + # move  10, 120 (10-bit, 10-bit)
-      '0' + '000000' + '111110' +         # draw   0, -30
-      '0' + '000000' + '111110' +         # draw   0, -30
-      '0' + '000000' + '111110' +         # draw   0, -30
-      '0' + '000000' + '110100' +         # draw   0, -20
-      '0' + '011110' + '011110' +         # draw  30,  30
-      '0' + '111001' + '011001' +         # draw -25,  25
-      '0' + '000000' + '100010'           # draw   0,  -2
+      '1' + '0000010100' + '0001111000' + # move  20, 120 (10-bit, 10-bit)
+      '0' + '001010' + '100010' +         # draw  10, -30
+      '0' + '001010' + '100010' +         # draw  10, -30
+      '0' + '001010' + '100010' +         # draw  10, -30
+      '0' + '001010' + '011110' +         # draw  10,  30
+      '0' + '001010' + '011110' +         # draw  10,  30
+      '0' + '001010' + '011110' +         # draw  10,  30
+      '1' + '0000100011' + '0001001011' + # move  35,  75
+      '0' + '011110' + '111111' +         # draw  30,  -1
+      '000'                               # remaining bits in last byte
     }
 
     let( :enhanced_wide_bit_sequence ) {
@@ -94,15 +98,16 @@ module ClientForPoslynx
       '0000000110011010' +                 # Y scaled resolution: 410
       '0001111101000000' +                 # X physical size in 0.01 mm units: 8000
       '0000110010000000' +                 # Y physical size in 0.01 mm units: 3200
-      '1' + '00000001010' + '0001111000' + # move  10, 120 (10-bit, 11-bit)
-      '0' + '000000' + '111110' +          # draw   0, -30
-      '0' + '000000' + '111110' +          # draw   0, -30
-      '0' + '000000' + '111110' +          # draw   0, -30
-      '0' + '000000' + '110100' +          # draw   0, -20
-      '0' + '011110' + '011110' +          # draw  30,  30
-      '0' + '111001' + '011001' +          # draw -25,  25
-      '0' + '000000' + '100010' +          # draw   0,  -2
-      '0000000'                            # 7 remaining bits in last byte
+      '1' + '00000010100' + '0001111000' + # move  20, 120 (11-bit, 10-bit)
+      '0' + '001010' + '100010' +          # draw  10, -30
+      '0' + '001010' + '100010' +          # draw  10, -30
+      '0' + '001010' + '100010' +          # draw  10, -30
+      '0' + '001010' + '011110' +          # draw  10,  30
+      '0' + '001010' + '011110' +          # draw  10,  30
+      '0' + '001010' + '011110' +          # draw  10,  30
+      '1' + '00000100011' + '0001001011' + # move  35,  75
+      '0' + '011110' + '111111' +          # draw  30,  -1
+      '0'                                  # remaining bit in last byte
     }
 
     it "is unequal to another instance with a different sequence of steps and no metrics" do

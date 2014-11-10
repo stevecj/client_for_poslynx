@@ -16,7 +16,7 @@ module ClientForPoslynx
         bit_seq.shift 1
         dx_bit_seq = bit_seq.shift( DELTA_BITS_LONG )
         dy_bit_seq = bit_seq.shift( DELTA_BITS_LONG )
-        new( dx_bit_seq.as_sign_and_magnitude, dy_bit_seq.as_sign_and_magnitude )
+        new( dx_bit_seq.as_signed, dy_bit_seq.as_signed )
       end
 
       attr_reader :dx, :dy
@@ -33,8 +33,8 @@ module ClientForPoslynx
 
       def to_bit_sequence(serialization_format=nil)
         bit_seq = ClientForPoslynx::BitSequence / '0'
-        bit_seq << ClientForPoslynx::BitSequence.from_sign_and_magnitude_of( dx, DELTA_BITS_LONG )
-        bit_seq << ClientForPoslynx::BitSequence.from_sign_and_magnitude_of( dy, DELTA_BITS_LONG )
+        bit_seq << ClientForPoslynx::BitSequence.from_signed( dx, DELTA_BITS_LONG )
+        bit_seq << ClientForPoslynx::BitSequence.from_signed( dy, DELTA_BITS_LONG )
       end
 
     end

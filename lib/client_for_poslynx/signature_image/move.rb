@@ -8,7 +8,7 @@ module ClientForPoslynx
       Y_BITS_LONG = { legacy: 7,  enhanced_narrow: 10, enhanced_wide: 10 }
 
       def self.first_in_bit_sequence(bit_seq, format=:legacy)
-        bit_sequence_length = X_BITS_LONG[format] + Y_BITS_LONG[format]
+        bit_sequence_length = 1 + X_BITS_LONG[format] + Y_BITS_LONG[format]
         bit_seq.first_bit_digit == '1' &&
           bit_seq.length >= bit_sequence_length
       end

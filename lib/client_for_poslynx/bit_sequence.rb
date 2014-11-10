@@ -41,11 +41,21 @@ module ClientForPoslynx
         bit_seq
       end
 
-      def from_sign_and_magnitude_of(value, seq_length)
-        magnitude = value.abs
-        magnitude_seq = from_unsigned( magnitude, seq_length - 1 )
-        sign_bit = from_bit_digits( value < 0 ? '1' : '0' )
-        magnitude_seq.unshift( sign_bit )
+      def from_signed(value, seq_length)
+        if seq_length > 64
+          raise TooManyBitsLong, "Can't build a representation more than 64 bits long from a signed number"
+        end
+        max_magnitude = 2 ** (seq_length - 1)
+        if value < -max_magnitude
+          raise NumberOutOfBounds, "The largest negative value representable in #{seq_length} bits is smaller than than #{value}"
+        end
+        if value >= max_magnitude
+          raise NumberOutOfBounds, "The largest positive value representable in #{seq_length} bits is less than #{value}"
+        end
+        packed_bits = [ value ].pack('q>')
+        bit_seq = from_packed_bits( packed_bits )
+        bit_seq.shift( 64 - seq_length )
+        bit_seq
       end
 
       def from_base64(encoded)
@@ -111,6 +121,17 @@ module ClientForPoslynx
       self
     end
 
+    def as_signed
+      if length > 64
+        raise TooManyBitsLong,
+          "Cannot coerce sequence longer than 64 bits to signed number"
+      end
+      fill = first_bit_digit * 64
+      little_endian_digits = digits_string.reverse + fill
+      packed_little_endian = [ little_endian_digits ].pack('b*')
+      packed_little_endian.unpack('q<').first
+    end
+
     def as_unsigned
       if length > 64
         raise TooManyBitsLong,
@@ -119,16 +140,6 @@ module ClientForPoslynx
       little_endian_digits = digits_string.reverse + '0' * 64
       packed_little_endian = [ little_endian_digits ].pack('b*')
       packed_little_endian.unpack('Q<').first
-    end
-
-    def as_sign_and_magnitude
-      if length > 65
-        raise TooManyBitsLong,
-          "Cannot coerce sequence longer than 65 bits to unsigned number"
-      end
-      magnitude_seq = self.class.from_bit_digits( digits_string[1..-1] )
-      magnitude = magnitude_seq.as_unsigned
-      first_bit_digit == '1' ? - magnitude : magnitude
     end
 
     private
