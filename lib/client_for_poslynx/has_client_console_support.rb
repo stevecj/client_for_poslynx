@@ -17,9 +17,21 @@ module ClientForPoslynx
       end
 
       def send_request(request)
+        #FIXME: This method is a bit large and could use some refactoring.
         conn = TCPSocket.new( config.host, config.port )
         conn.puts request.xml_serialize
-        response = get_response_from( conn )
+        ready = IO.select( [conn], [], [conn], 1 )
+        puts "Waiting for response. Press Enter to cancel." unless ready
+        while true do
+          print '.'
+          select_state = IO.select( [conn, $stdin], [], [conn], 1 )
+          next unless select_state
+          rs, _, es = select_state
+          ( ready = true ; break ) if rs.include?( conn   )
+          ( gets         ; break ) if rs.include?( $stdin )
+        end
+        puts
+        response = get_response_from( conn ) if ready
         conn.close unless conn.closed?
         response
       end
