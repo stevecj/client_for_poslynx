@@ -16,11 +16,11 @@ Features:
 
 The best introduction to this gem is probably to play around with
 with the POSLynx client console.  Assuming you have a POSLynx
-unit with IP address 192.168.1.123, listening on port 54321, with
-a registered client MAC of 000000000000, an example poslynx
-client session might look like...
+unit with IP address 192.168.1.123, listening on port 54321 using
+SSL encryption, with a registered client MAC of 000000000000, an
+example poslynx client session might look like...
 
-    $ bundle exec poslynx_client_console 173.195.60.144:14270 --client_mac=000000000000
+    $ bundle exec poslynx_client_console 173.195.60.144:14270 --use-ssl --client_mac=000000000000
     1.9.3-p545 :001 > req = poslynx_client.example_pin_pad_display_message_request
      => #<ClientForPoslynx::Data::Requests::PinPadDisplayMessage:0x007f941b4b1fe8 @client_mac="001C42E644FE", @text_lines=["First example line", "Second example line"], @line_count=2, @button_labels=["1st of optional buttons", "2nd button"]>
     1.9.3-p545 :002 > resp = poslynx_client.send_request(req)
@@ -29,8 +29,8 @@ client session might look like...
 
 This gem also provides a fake POS/terminal application that you
 can run in a separate console window when you are working without
-the necessary access to an actual POSLynx unit and PIN pad.  To
-start the fake POS/terminal listening on port 3010...
+access to an actual POSLynx unit and PIN pad.  To start the fake
+POS/terminal listening on port 3010...
 
     bundle exec fake_pos_terminal 3010
 

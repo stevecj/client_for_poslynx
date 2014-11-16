@@ -2,6 +2,7 @@
 
 require 'client_for_poslynx'
 require 'socket'
+require 'openssl'
 
 module ClientForPoslynx
 
@@ -18,7 +19,13 @@ module ClientForPoslynx
 
       def send_request(request)
         #FIXME: This method is a bit large and could use some refactoring.
-        conn = TCPSocket.new( config.host, config.port )
+        raw_conn = TCPSocket.new( config.host, config.port )
+        if config.use_ssl
+          conn = OpenSSL::SSL::SSLSocket.new( raw_conn )
+          conn.connect
+        else
+          conn = raw_conn
+        end
         conn.puts request.xml_serialize
         ready = IO.select( [conn], [], [conn], 1 )
         puts "Waiting for response. Press Enter to cancel." unless ready
@@ -32,7 +39,7 @@ module ClientForPoslynx
         end
         puts
         response = get_response_from( conn ) if ready
-        conn.close unless conn.closed?
+        raw_conn.close unless raw_conn.closed?
         response
       end
 
@@ -111,7 +118,7 @@ module ClientForPoslynx
     end
 
     class Config
-      attr_accessor :host, :port, :client_mac_for_examples
+      attr_accessor :host, :port, :use_ssl, :client_mac_for_examples
     end
 
   end
