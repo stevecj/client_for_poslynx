@@ -54,6 +54,7 @@ module ClientForPoslynx
           req.merchant_supplied_id = 'INVC-123-MERCH-SUPPL'
           req.amount               = '101.25'
           req.input_source         = 'EXTERNAL'
+          req.capture_signature    = 'Yes'
         }
       end
 

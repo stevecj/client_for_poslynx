@@ -21,6 +21,10 @@ module ClientForPoslynx
           raise NotImplementedError
         end
 
+        def handle_supported_source_request
+          raise NotImplementedError, "Including class responsibility"
+        end
+
         def handle_unsupported_source_request
           set_result '0135', 'Transaction Not Supported'
           response.result_text = "Fake POSLynx doesn't currently support input source other than EXTERNAL"
