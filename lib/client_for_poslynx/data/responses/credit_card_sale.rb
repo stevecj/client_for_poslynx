@@ -28,12 +28,26 @@ module ClientForPoslynx
         attr_element_mapping attribute: :customer_receipt,         element: 'ReceiptCustomer', numbered_lines: 'Receipt%d'
 
         def signature=(value)
+          # Extract content from CDATA section XML improperly encoded
+          # as text node content by some POSLynx versions.
           if value =~ /^<!\[CDATA\[(.*)\]\]>$/
             @signature = $1
           else
             @signature = value
           end
         end
+
+        def signature_image=(img)
+          self.signature = img.nil? ?
+                                    nil :
+                                    img.serialize
+        end
+
+        def signature_image
+          return nil if signature.nil?
+          SignatureImage.deserialize( signature )
+        end
+
       end
 
     end

@@ -147,6 +147,39 @@ module ClientForPoslynx
     end
 
 
+    context "signature image conveniences" do
+      let( :signature_image ) {
+        SignatureImage.new.tap { |si|
+          si.metrics = SignatureImage::Metrics.new( [3_000, 200], [30_000, 2_000] )
+          si.move 20, 15
+          si.draw 30, 15
+          si.draw 30, 15
+        }
+      }
+      let( :base_64_regex ) { /^[A-Za-z0-9\+\/]+={0,2}$/ }
+
+      it "sets signature to nil for nil signature image" do
+        subject.signature_image = nil
+        expect( subject.signature ).to be_nil
+      end
+
+      it "gets nil signature image for nil signature" do
+        subject.signature = nil
+        expect( subject.signature_image ).to be_nil
+      end
+
+      it "Supports setting/getting signature data as signature image" do
+        subject.signature_image = signature_image
+        expect( subject.signature ).to match( base_64_regex )
+
+        subject2 = described_class.new
+        subject2.signature = subject.signature
+        expect( subject2.signature_image ).to eq( signature_image )
+      end
+
+    end
+
+
   end
 
 end
