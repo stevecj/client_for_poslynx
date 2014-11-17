@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'client_for_poslynx'
-require 'socket'
-require 'openssl'
+require_relative 'has_client_console_support/connection'
+require_relative 'has_client_console_support/response_ready_monitor'
 
 module ClientForPoslynx
 
@@ -18,28 +18,11 @@ module ClientForPoslynx
       end
 
       def send_request(request)
-        #FIXME: This method is a bit large and could use some refactoring.
-        raw_conn = TCPSocket.new( config.host, config.port )
-        if config.use_ssl
-          conn = OpenSSL::SSL::SSLSocket.new( raw_conn )
-          conn.connect
-        else
-          conn = raw_conn
-        end
+        conn = Connection.connect( config )
         conn.puts request.xml_serialize
-        ready = IO.select( [conn], [], [conn], 1 )
-        puts "Waiting for response. Press Enter to cancel." unless ready
-        while true do
-          print '.'
-          select_state = IO.select( [conn, $stdin], [], [conn], 1 )
-          next unless select_state
-          rs, _, es = select_state
-          ( ready = true ; break ) if rs.include?( conn   )
-          ( gets         ; break ) if rs.include?( $stdin )
-        end
-        puts
-        response = get_response_from( conn ) if ready
-        raw_conn.close unless raw_conn.closed?
+        ready = ResponseReadyMonitor.ready?( conn )
+        response = get_response_from( conn.io ) if ready
+        conn.close
         response
       end
 
