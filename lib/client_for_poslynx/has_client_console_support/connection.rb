@@ -23,6 +23,9 @@ module ClientForPoslynx
           connect_ssl_socket :
           tcp_connection
         self
+      rescue StandardError
+        close
+        raise
       end
 
       def close

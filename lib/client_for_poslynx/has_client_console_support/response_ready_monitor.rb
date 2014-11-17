@@ -20,7 +20,7 @@ module ClientForPoslynx
         while true do
           print '.'
 
-          # Wait up to 1 second for data or line of input from user.
+          # Wait up to 1 second for data or for line of input from user.
           select_state = IO.select( [conn.io, $stdin], [], [conn.io], 1 )
           next unless select_state
 
