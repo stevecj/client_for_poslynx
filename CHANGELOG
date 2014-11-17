@@ -32,6 +32,14 @@ Version 0.2.5
 
 Version 0.2.6
 - Add enhanced-format signature data handling.
-- Fix misconception about signed number representation in
-  signature image data.
+- Fix misconception about signed number representation in signa-
+  ture image data.
 - Bring signature image handling out of experimental status.
+
+Version 0.3.0
+- Allow user to cancel waiting for reply in
+  poslynx_client_console.
+- Support SSL connections from poslynx_client_console.
+- Change word separators in poslynx_client_console from under-
+  scores to dashes.
+- Fake Poslynx includes signature image data in response.
