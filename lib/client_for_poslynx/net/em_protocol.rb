@@ -30,33 +30,43 @@ module EventMachine
 
       # @private
       def receive_line(line)
-        self._serial_response << line
-        if (! _root_name) && line =~ /^(?:<\?.+?\?>)?<([A-Za-z_][^\s>]*)[ >]/
-          self._root_name = $1
-        end
-        if _root_name && line =~ /<\/#{_root_name}\s*>\s*$/
-          sr = _serial_response
-          self._reset_response_buffer
-          response = ClientForPoslynx::Data::AbstractData.xml_parse( sr )
+        _response_buffer.add_line line do |complete_message|
+          response = ClientForPoslynx::Data::AbstractData.xml_parse( complete_message )
           receive_response response
         end
       end
 
       # @private
-      attr_writer :_serial_response
-
-      # @private
-      def _serial_response
-        @_serial_response ||= ''
+      def _response_buffer
+        @_response_buffer ||= MessageLinesBuffer.new
       end
 
-      # @private
-      attr_accessor :_root_name
+      class MessageLinesBuffer
+        def initialize
+          reset
+        end
 
-      # @private
-      def _reset_response_buffer
-        self._serial_response = ''
-        self._root_name = nil
+        def add_line(line)
+          message << line
+          if (! root_name) && line =~ /^(?:<\?.+?\?>)?<([A-Za-z_][^\s>]*)[ >]/
+            self.root_name = $1
+          end
+          if root_name && line =~ /<\/#{root_name}\s*>\s*$/
+            complete_message = message
+            reset
+            yield complete_message
+          end
+        end
+
+        private
+
+        attr_reader   :message
+        attr_accessor :root_name
+
+        def reset
+          @message   = ''
+          @root_name = nil
+        end
       end
 
     end
