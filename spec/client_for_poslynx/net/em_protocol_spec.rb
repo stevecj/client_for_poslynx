@@ -6,6 +6,7 @@ require 'stringio'
 module ClientForPoslynx
 
   describe EM::Protocols::POSLynx do
+
     let( :connection_class ) {
       subj = subject
       connection_class =
@@ -31,6 +32,21 @@ module ClientForPoslynx
 
       connection.send_request request
     end
+
+    it "receives a response" do
+      response = Data::Responses::PinPadDisplayMessage.new.tap do |req|
+        req.result = "Hooya"
+      end
+
+      expect( connection ).to receive( :receive_response ){ |got_data|
+        expect( got_data ).to be_kind_of( Data::Responses::PinPadDisplayMessage )
+        expect( got_data.result ).to eq( 'Hooya' )
+      }
+
+      connection.receive_data response.xml_serialize.rstrip
+      connection.receive_data "\n"
+    end
+
   end
 
 end
