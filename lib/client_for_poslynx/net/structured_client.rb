@@ -32,6 +32,8 @@ module ClientForPoslynx
       end
 
       class EM_Connection < EM::Connection
+        include EM::Protocols::POSLynx
+
         attr_reader :directive_queue
 
         def initialize(directive_queue)
@@ -60,20 +62,20 @@ module ClientForPoslynx
         def process_directive(directive)
           kind, *args = Array( directive )
           case kind
-            when :end_session then end_session
-            when :send_request then send_request *args
+          when :end_session
+            end_session
+          when :send_request
+            begin
+              send_request *args
+            ensure
+              handle_next_directive
+            end
           end
         end
 
         def end_session
           after_writing = true
           close_connection after_writing
-        end
-
-        def send_request(request)
-          serial_data = request.xml_serialize
-          send_data serial_data
-          handle_next_directive
         end
 
       end
