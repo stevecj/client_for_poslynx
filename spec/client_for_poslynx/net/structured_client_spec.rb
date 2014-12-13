@@ -5,25 +5,25 @@ require 'stringio'
 
 module ClientForPoslynx
 
-  describe "Structured API" do
+  describe Net::StructuredClient do
 
     it "makes and closes a connection" do
-      client_action = ->(port, lq) do
-        lq << :client_connecting
-        client = Net::StructuredClient.new( '127.0.0.1', port )
+      client_action = ->(port, log) do
+        log << :client_connecting
+        client = described_class.new( '127.0.0.1', port )
         begin
           sleep 0.1  # Let server report connection acceptance.
-          lq << :client_disconnecting
+          log << :client_disconnecting
         ensure
           client.end_session
         end
       end
 
-      server_action = ->(conn, lq) do
-        lq << :server_received_connection
+      server_action = ->(conn, log) do
+        log << :server_received_connection
         conn.wait_writable
         c = conn.getc
-        lq << if c.nil? then :server_received_eof else :server_didnt_receive_eof end
+        log << if c.nil? then :server_received_eof else :server_didnt_receive_eof end
       end
 
       log_array = TestTCP_Server.run_client_server_session(
@@ -43,21 +43,21 @@ module ClientForPoslynx
         req.client_mac = 'abc'
       end
 
-      client_action = ->(port, lq) do
-        client = Net::StructuredClient.new( '127.0.0.1', port )
+      client_action = ->(port, log) do
+        client = described_class.new( '127.0.0.1', port )
         begin
           sleep 0.1  # Let server report connection acceptance.
-          lq << :sending_request
+          log << :sending_request
           client.send_request request_to_send
         ensure
           client.end_session
         end
       end
 
-      server_action = ->(conn, lq) do
+      server_action = ->(conn, log) do
         conn.wait_readable
         line = conn.gets
-        lq << [ :server_received_line, line ]
+        log << [ :server_received_line, line ]
       end
 
       log_array = TestTCP_Server.run_client_server_session(
@@ -82,19 +82,19 @@ module ClientForPoslynx
       end
       serial_response_data_to_send = response_data_to_send.xml_serialize
 
-      client_action = ->(port, lq) do
-        client = Net::StructuredClient.new( '127.0.0.1', port )
+      client_action = ->(port, log) do
+        client = described_class.new( '127.0.0.1', port )
         begin
           sleep 0.1  # Let server send response.
-          lq << [ :got_response, client.got_response ]
+          log << [ :got_response, client.got_response ]
         ensure
           client.end_session
         end
       end
 
-      server_action = ->(conn, lq) do
+      server_action = ->(conn, log) do
         conn.wait_writable
-        lq << :server_sending_response
+        log << :server_sending_response
         conn.puts serial_response_data_to_send
       end
 
