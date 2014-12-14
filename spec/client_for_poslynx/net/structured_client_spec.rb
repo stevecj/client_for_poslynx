@@ -13,8 +13,8 @@ module ClientForPoslynx
         client = described_class.new( '127.0.0.1', port )
         begin
           sleep 0.1  # Let server report connection acceptance.
-          log << :client_disconnecting
         ensure
+          log << :client_disconnecting
           client.end_session
         end
       end
@@ -86,7 +86,7 @@ module ClientForPoslynx
         client = described_class.new( '127.0.0.1', port )
         begin
           sleep 0.1  # Let server send response.
-          log << [ :got_response, client.got_response ]
+          log << [ :got_response, client.get_response ]
         ensure
           client.end_session
         end

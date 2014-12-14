@@ -10,7 +10,7 @@ module EventMachine
     module POSLynx
       include EM::Protocols::LineProtocol
 
-      # Called by user code te send a request to the POSLynx
+      # Called by user code to send a request to the POSLynx
       # system.
       # The request object is expected to behave like an
       # instance of a descendant class of
