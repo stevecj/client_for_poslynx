@@ -3,6 +3,7 @@
 require_relative 'message_handling/xml_extractor'
 require_relative 'message_handling/data_extractor'
 require_relative 'message_handling/stream_data_writer'
+require_relative 'message_handling/xml_lines_buffer'
 
 module ClientForPoslynx
 

@@ -6,7 +6,8 @@ module ClientForPoslynx
   module Net
 
     # A network client API suitable for use in a Structured (as
-    # oppoesed to Event-Driven) context such as an IRB console.
+    # oppoesed to Event-Driven) context such as from within an
+    # irb console session.
     class StructuredClient
 
       class SessionEndedError  < StandardError ; end

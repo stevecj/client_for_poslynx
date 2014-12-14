@@ -3,6 +3,10 @@
 module ClientForPoslynx
   module MessageHandling
 
+    # TODO: This is now obsolete and being replaced by a combina-
+    # tion of EventMachine's LineProtocol and XmlLinesBuffer.
+    # This class should be removed as soon as the fake POS
+    # terminal code has been re-built as an EM server.
     class XmlExtractor
       attr_reader :stream
 
