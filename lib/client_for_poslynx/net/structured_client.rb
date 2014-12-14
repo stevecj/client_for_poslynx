@@ -12,12 +12,12 @@ module ClientForPoslynx
       class SessionEndedError  < StandardError ; end
       class SessionEndingError < StandardError ; end
 
-      def initialize(host, port)
+      def initialize(host, port, use_ssl = false)
         @directive_queue = Queue.new
         @activity_queue  = Queue.new
         @em_thread = Thread.new do
           EM.run do
-            EM.connect host, port, EM_Connection, directive_queue, activity_queue
+            EM.connect host, port, EM_Connection, use_ssl, directive_queue, activity_queue
             EM.error_handler do |e|
               raise e
             end

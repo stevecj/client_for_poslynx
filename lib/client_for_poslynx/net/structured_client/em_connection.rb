@@ -9,14 +9,23 @@ module ClientForPoslynx
       class EM_Connection < EM::Connection
         include EM::Protocols::POSLynx
 
-        attr_reader :directive_queue, :activity_queue
+        attr_reader :use_ssl, :directive_queue, :activity_queue
 
-        def initialize(directive_queue, activity_queue)
+        def initialize(use_ssl, directive_queue, activity_queue)
+          @use_ssl         = use_ssl
           @directive_queue = directive_queue
           @activity_queue  = activity_queue
         end
 
         def connection_completed
+          if use_ssl
+            start_tls verify_peer: false
+          else
+            handle_next_directive
+          end
+        end
+
+        def ssl_handshake_completed
           handle_next_directive
         end
 
