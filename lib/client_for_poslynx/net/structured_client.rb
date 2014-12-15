@@ -13,6 +13,9 @@ module ClientForPoslynx
       class SessionEndedError  < StandardError ; end
       class SessionEndingError < StandardError ; end
 
+      # Initializes a new instance, given a host name or address
+      # and a host IP port number. If an SSL connection is
+      # required, then supply true for the use_ssl argument.
       def initialize(host, port, use_ssl = false)
         @directive_queue = Queue.new
         @activity_queue  = Queue.new
