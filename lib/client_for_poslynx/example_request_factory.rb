@@ -22,6 +22,12 @@ module ClientForPoslynx
       }
     end
 
+    def pin_pad_reset_request
+      Data::Requests::PinPadReset.new.tap { |req|
+        assign_common_example_request_attrs_to req
+      }
+    end
+
     def pin_pad_display_message_request
       ClientForPoslynx::Data::Requests::PinPadDisplayMessage.new.tap { |req|
         assign_common_example_request_attrs_to req
