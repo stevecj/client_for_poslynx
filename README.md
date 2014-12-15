@@ -44,8 +44,8 @@ A quick and easy way to try out this gem is to use the structured
 client and example-request factory from an irb console.
 
 Assuming you have a POSLynx host running at 192.168.1.99 on port
-1234 with SSL required, and if our lane has a registered client
-MAC value of '123456789ABC', then with the client_for_poslynx gem
+1234 with SSL required, and if your lane has a registered client
+MAC value of 123456789ABC, then with the client_for_poslynx gem
 installed, you should be able to execute a sequence similar to
 the following.
 
@@ -65,7 +65,11 @@ the following.
     1.9.3-p545 :007 > client.end_session
      => nil
 
-### Code example using POSLynx protocol for EventManager
+### Using the EventMachine protocol
+
+The following example code demonstrates how to write an
+event-driven client using EventMachine and the POSLynx protocol
+for EventMachine.
 
     require 'client_for_poslynx'
     
