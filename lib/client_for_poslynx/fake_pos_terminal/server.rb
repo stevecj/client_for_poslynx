@@ -52,7 +52,7 @@ module ClientForPoslynx
       end
 
       def tcp_server
-        @tcp_server ||= TCPServer.new( port_number )
+        @tcp_server ||= TCPServer.new( '127.0.0.1', port_number )
       end
 
       def request_dispatcher
