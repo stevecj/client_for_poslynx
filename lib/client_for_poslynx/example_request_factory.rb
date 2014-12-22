@@ -18,7 +18,8 @@ module ClientForPoslynx
     def pin_pad_initialize_request
       Data::Requests::PinPadInitialize.new.tap { |req|
         assign_common_example_request_attrs_to req
-        req.idle_prompt = "Example idle prompt"
+        now_text = Time.now.strftime('%H:%M:%S')
+        req.idle_prompt = "Example idle prompt at #{now_text}"
       }
     end
 
