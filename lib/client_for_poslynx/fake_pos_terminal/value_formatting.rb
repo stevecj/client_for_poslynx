@@ -5,7 +5,7 @@ require 'bigdecimal'
 module ClientForPoslynx
   module FakePosTerminal
 
-    module Format
+    module ValueFormatting
 
       def format_usd(value)
         value = BigDecimal( value )

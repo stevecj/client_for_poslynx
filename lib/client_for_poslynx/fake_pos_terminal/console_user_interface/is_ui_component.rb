@@ -8,7 +8,7 @@ module ClientForPoslynx
 
       module IsUI_Component
         extend Forwardable
-        include FakePosTerminal::Format
+        include FakePosTerminal::ValueFormatting
 
         private
 
@@ -80,20 +80,6 @@ module ClientForPoslynx
         def format_multiline_message(text_lines)
           centered_lines = text_lines.map { |text| text.center(68) }
           "\n" << centered_lines * "\n" << "\n\n"
-        end
-
-        def show_payment_confirmation(amount)
-          content =
-            format_payment_confirmation( amount ) <<
-            format_buttons(%w[ OK Cancel ])
-          display_content content
-        end
-
-        def format_payment_confirmation(amount)
-          lines = []
-          lines << "TOTAL AMOUNT"
-          lines << format_usd( amount )
-          format_multiline_message(lines)
         end
 
         def format_buttons(button_labels)

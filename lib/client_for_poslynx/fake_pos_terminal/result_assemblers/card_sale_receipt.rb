@@ -5,7 +5,7 @@ module ClientForPoslynx
     module ResultAssemblers
 
       class CardSaleReceipt
-        include FakePosTerminal::Format
+        include FakePosTerminal::ValueFormatting
 
         attr_reader :request, :response, :total_amount
 

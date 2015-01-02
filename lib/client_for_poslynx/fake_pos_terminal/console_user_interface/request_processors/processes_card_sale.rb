@@ -6,9 +6,16 @@ module ClientForPoslynx
       module RequestProcessors
 
         module ProcessesCardSale
-          include Format
+          include ValueFormatting
 
           private
+
+          def format_payment_confirmation(amount)
+            lines = []
+            lines << "TOTAL AMOUNT"
+            lines << format_usd( amount )
+            format_multiline_message(lines)
+          end
 
           def fetch_card_swipe(after)
             show_card_swipe_request
@@ -42,6 +49,13 @@ module ClientForPoslynx
             lines << "Total: " + format_usd( total ) if total
             lines << "Transaction: " + transaction
             format_multiline_message( lines )
+          end
+
+          def show_payment_confirmation(amount)
+            content =
+              format_payment_confirmation( amount ) <<
+              format_buttons(%w[ OK Cancel ])
+            display_content content
           end
 
           def fetch_sale_confirmation(confirmed_listener, cancelled_listener)

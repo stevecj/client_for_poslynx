@@ -1,7 +1,7 @@
 # coding: utf-8
 
 require 'client_for_poslynx'
-require_relative 'fake_pos_terminal/format'
+require_relative 'fake_pos_terminal/value_formatting'
 require_relative 'fake_pos_terminal/context'
 require_relative 'fake_pos_terminal/result_assemblers'
 require_relative 'fake_pos_terminal/console_user_interface'
