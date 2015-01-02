@@ -15,7 +15,11 @@ module ClientForPoslynx
       end
 
       def post_init
-        user_interface.indicate_connected
+        user_interface.client_connected
+      end
+
+      def unbind
+        user_interface.client_disconnected
       end
 
       def receive_request(request)

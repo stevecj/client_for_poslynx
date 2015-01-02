@@ -59,10 +59,15 @@ module ClientForPoslynx
         )
       end
 
-      def indicate_connected
+      def client_connected
         update_status_line(
           "Fake POS Terminal ・ TCP port #{context.port_number} ・ Client is connected"
         )
+      end
+
+      def client_disconnected
+        idle!
+        indicate_waiting_for_connection
       end
 
     end
