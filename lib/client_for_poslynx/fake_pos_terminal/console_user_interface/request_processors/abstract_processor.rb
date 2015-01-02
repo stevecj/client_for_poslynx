@@ -6,10 +6,13 @@ module ClientForPoslynx
       module RequestProcessors
 
         class AbstractProcessor
-          attr_reader :ui, :request, :response, :result_listener
+          include IsUI_Component
 
-          def initialize(ui, request, response, result_listener)
-            @ui              = ui
+          attr_reader :ui_context, :request, :response, :result_listener
+
+          def initialize(ui_context, request, response, result_listener)
+            raise 'foo' if ui_context.nil?
+            @ui_context      = ui_context
             @request         = request
             @response        = response
             @result_listener = result_listener
@@ -27,6 +30,7 @@ module ClientForPoslynx
 
           def respond
             result_listener.call response
+            idle!
           end
 
         end

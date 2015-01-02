@@ -8,9 +8,11 @@ module ClientForPoslynx
         module ProcessesCardSale
           include Format
 
+          private
+
           def fetch_card_swipe(after)
             show_card_swipe_request
-            ui.fetch_fake_card_swipe ->(last_4_digits){
+            fetch_fake_card_swipe_entry ->(last_4_digits){
               response.card_number_last_4 = last_4_digits
               response.input_method = 'SWIPED'
               response.card_type    = use_card_type
@@ -18,23 +20,33 @@ module ClientForPoslynx
             }
           end
 
-          def show_card_swipe_request
-            ui.display_content format_card_swipe_request
+          def fetch_fake_card_swipe_entry(result_listener)
+            puts
+            print "Enter last 4 digits of hypothetical swiped card: "
+            UserTextLineFetcher.new(
+              ui_context,
+              /\A\d{4}\Z/.method(:match),
+              result_listener
+            ).call
           end
 
-          def format_card_swipe_request(options = {})
+          def show_card_swipe_request
+            display_content format_card_swipe_request
+          end
+
+          def format_card_swipe_request
             total       = request.amount
             transaction = 'PURCHASE'
             lines = []
             lines << "Please swipe your card"
             lines << "Total: " + format_usd( total ) if total
             lines << "Transaction: " + transaction
-            ui.format_multiline_message( lines )
+            format_multiline_message( lines )
           end
 
-          def fetch_confirmation(confirmed_listener, cancelled_listener)
-            ui.show_payment_confirmation request.amount
-            ui.fetch_confirmation ->(result){
+          def fetch_sale_confirmation(confirmed_listener, cancelled_listener)
+            show_payment_confirmation request.amount
+            fetch_confirmation ->(result){
               if result
                 confirmed_listener.call
               else
@@ -72,7 +84,6 @@ module ClientForPoslynx
             apply_fake_client_details
             apply_response_transaction_datetime
             apply_response_receipts
-            result_listener.call response
           end
 
           def apply_confirmed_response_details

@@ -10,7 +10,7 @@ module ClientForPoslynx
 
           def call
             fetch_card_swipe ->() {
-              fetch_confirmation(
+              fetch_sale_confirmation(
                 ->() {
                   if request.capture_signature == 'Yes'
                     fetch_signature method(:respond_with_success)
@@ -37,15 +37,15 @@ module ClientForPoslynx
           end
 
           def fetch_signature(after)
-            ui.display_signature_entry_box
+            display_signature_entry_box
             puts
             print "Press enter to simulate entering a signature: "
             UserRawTextLineFetcher.new(
-              ui,
+              ui_context,
               ->(entry) { true },
               ->(entry) {
                 apply_signature_image_data
-                respond_with_success
+                after.call
               }
             ).call
           end

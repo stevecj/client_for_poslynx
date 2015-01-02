@@ -11,10 +11,10 @@ module ClientForPoslynx
 
           def call
             if has_buttons?
-              ui.show_message_with_buttons text_values, request.button_labels
-              ui.fetch_button_selection request.button_labels, method( :respond_with_selected_button )
+              show_message_with_buttons text_values, request.button_labels
+              fetch_button_selection request.button_labels, method( :respond_with_selected_button )
             else
-              ui.show_message text_values
+              show_message text_values
               respond_with_no_buttons
             end
           end

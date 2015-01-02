@@ -8,7 +8,7 @@ module ClientForPoslynx
         class PinPadInitializeProcessor < AbstractProcessor
 
           def call
-            ui.reset request.idle_prompt
+            reset request.idle_prompt
             set_result '0000', 'Success', 'Success'
             respond
           end

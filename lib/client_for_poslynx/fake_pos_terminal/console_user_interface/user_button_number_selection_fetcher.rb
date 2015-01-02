@@ -5,15 +5,17 @@ module ClientForPoslynx
     class ConsoleUserInterface
 
       class UserButtonNumberSelectionFetcher
-        attr_reader :ui, :button_count, :selection_listener, :user_text_line_fetcher
+        include IsUI_Component
 
-        def initialize(ui, button_count, selection_listener)
-          @ui                 = ui
+        attr_reader :ui_context, :button_count, :selection_listener, :user_text_line_fetcher
+
+        def initialize(ui_context, button_count, selection_listener)
+          @ui_context         = ui_context
           @button_count       = button_count
           @selection_listener = selection_listener
 
           @user_text_line_fetcher = UserTextLineFetcher.new(
-            ui,
+            ui_context,
             method(:valid_selection?),
             method(:receive_entry)
           )
@@ -36,8 +38,8 @@ module ClientForPoslynx
         end
 
         def show_selection(button_num)
-          Paint.to_start_of_line
-          Paint.clear_to_end_of_screen
+          to_start_of_line
+          clear_to_end_of_screen
           puts " Selected button #{button_num}"
         end
 

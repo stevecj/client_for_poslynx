@@ -7,10 +7,10 @@ module ClientForPoslynx
       class RequestHandler
         include ClientForPoslynx::Data::Requests::CanVisit
 
-        attr_reader :ui, :request, :response, :result_listener
+        attr_reader :ui_context, :request, :response, :result_listener
 
-        def initialize(ui, request, response, result_listener)
-          @ui              = ui
+        def initialize(ui_context, request, response, result_listener)
+          @ui_context      = ui_context
           @request         = request
           @response        = response
           @result_listener = result_listener
@@ -55,7 +55,7 @@ module ClientForPoslynx
         private
 
         def process_using(klass)
-          processor = klass.new( ui, request, response, result_listener )
+          processor = klass.new( ui_context, request, response, result_listener )
           processor.call
         end
 

@@ -5,10 +5,12 @@ module ClientForPoslynx
     class ConsoleUserInterface
 
       class UserRawTextLineFetcher
-        attr_reader :ui, :entry_validator, :result_listener
+        include IsUI_Component
 
-        def initialize(ui, entry_validator, result_listener)
-          @ui               = ui
+        attr_reader :ui_context, :entry_validator, :result_listener
+
+        def initialize(ui_context, entry_validator, result_listener)
+          @ui_context       = ui_context
           @entry_validator  = entry_validator
           @result_listener  = result_listener
         end
@@ -18,7 +20,7 @@ module ClientForPoslynx
         end
 
         def start_wait_loop
-          ui.user_text_line_handler = method( :receive_line )
+          self.user_text_line_handler = method( :receive_line )
         end
 
         def receive_line(line)
@@ -32,7 +34,7 @@ module ClientForPoslynx
         end
 
         def handle_valid_entry(entry)
-          ui.user_text_line_handler = nil
+          self.user_text_line_handler = nil
           result_listener.call entry
         end
 

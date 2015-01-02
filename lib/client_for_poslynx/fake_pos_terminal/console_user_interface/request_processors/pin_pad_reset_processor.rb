@@ -8,7 +8,7 @@ module ClientForPoslynx
         class PinPadResetProcessor < AbstractProcessor
 
           def call
-            ui.reset
+            reset
             set_result '0000', 'Success', 'Success'
             respond
           end
