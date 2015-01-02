@@ -4,7 +4,7 @@ module ClientForPoslynx
 
   describe Data::Responses::DebitCardSale do
 
-    it_behaves_like "a data object"
+    it_behaves_like "a response data object"
 
     it "Serializes to a PLResponse XML document for a DCSALE response" do
       expected_xml = "<PLResponse><Command>DCSALE</Command></PLResponse>\n"

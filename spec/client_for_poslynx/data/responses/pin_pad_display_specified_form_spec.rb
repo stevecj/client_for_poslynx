@@ -4,7 +4,7 @@ module ClientForPoslynx
 
   describe Data::Responses::PinPadDisplaySpecifiedForm do
 
-    it_behaves_like "a data object"
+    it_behaves_like "a response data object"
 
     it "Serializes to a PLResponse XML document for a PPSPECIFIEDFORM response" do
       expected_xml = "<PLResponse><Command>PPSPECIFIEDFORM</Command></PLResponse>\n"

@@ -4,7 +4,7 @@ module ClientForPoslynx
 
   describe Data::Responses::CreditCardSale do
 
-    it_behaves_like "a data object"
+    it_behaves_like "a response data object"
 
     # At least one revision of the POSLynx returns signature
     # data surrounded by &lt[CDATA[...]]&gt which is obviously

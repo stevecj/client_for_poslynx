@@ -2,11 +2,11 @@
 
 require 'client_for_poslynx'
 require_relative 'fake_pos_terminal/format'
-require_relative 'fake_pos_terminal/console_user_interface'
-require_relative 'fake_pos_terminal/server'
-require_relative 'fake_pos_terminal/request_dispatcher'
+require_relative 'fake_pos_terminal/context'
 require_relative 'fake_pos_terminal/result_assemblers'
-require_relative 'fake_pos_terminal/request_handlers'
+require_relative 'fake_pos_terminal/console_user_interface'
+require_relative 'fake_pos_terminal/net_handler'
+require_relative 'fake_pos_terminal/keyboard_handler'
 
 module ClientForPoslynx
 
@@ -17,9 +17,33 @@ module ClientForPoslynx
   module FakePosTerminal
 
     def self.start(port_number)
-      user_interface = ConsoleUserInterface.new
-      server = Server.new(port_number, user_interface)
-      server.start
+      context = self::Context.new
+      context.port_number = port_number
+
+      user_interface = self::ConsoleUserInterface.new( context )
+      user_interface.engage
+      user_interface.show_starting_up
+
+      EM.run do
+        EM.start_server(
+          "127.0.0.1", port_number, self::NetHandler,
+          user_interface
+        )
+
+        EM.open_keyboard(
+          self::KeyboardHandler,
+          user_interface
+        )
+
+        EM.error_handler do |e|
+          raise e
+        end
+
+        user_interface.indicate_waiting_for_connection
+      end
+
+    ensure
+      user_interface.disengage if user_interface
     end
 
   end

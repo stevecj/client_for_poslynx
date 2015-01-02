@@ -14,6 +14,10 @@ module ClientForPoslynx
           instance
         end
 
+        def self.response_class
+          Data::Responses.const_get( short_name )
+        end
+
         def self.root_element_name
           ROOT_ELEMENT_NAME
         end

@@ -2,6 +2,28 @@
 
 module ClientForPoslynx
 
+  RSpec.shared_examples "a request data object" do
+
+    it "specifies the corresponding response class" do
+      expected = described_class.name.sub( '::Requests::', '::Responses::' )
+      expect( described_class.response_class.name ).to eq( expected )
+    end
+
+    it_behaves_like "a data object"
+
+  end
+
+  RSpec.shared_examples "a response data object" do
+
+    it "specifies the corresponding request class" do
+      expected = described_class.name.sub( '::Responses::', '::Requests::' )
+      expect( described_class.request_class.name ).to eq( expected )
+    end
+
+    it_behaves_like "a data object"
+
+  end
+
   RSpec.shared_examples "a data object" do
 
     it "raises InvalidXmlError deserializing invalid XML" do

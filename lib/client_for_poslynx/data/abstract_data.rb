@@ -16,6 +16,10 @@ module ClientForPoslynx
           blank_new
         end
 
+        def short_name
+          name.split( '::' ).last
+        end
+
         def xml_parse(source_xml)
           doc = XmlDocument.from_xml( source_xml )
           data_class = concrete_data_class_for_nokogiri_document( doc )

@@ -8,6 +8,10 @@ module ClientForPoslynx
 
       class AbstractResponse < AbstractData
 
+        def self.request_class
+          Data::Requests.const_get( short_name )
+        end
+
         def self.root_element_name
           ROOT_ELEMENT_NAME
         end

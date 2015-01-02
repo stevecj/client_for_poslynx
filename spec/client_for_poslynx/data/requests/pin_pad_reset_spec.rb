@@ -4,7 +4,7 @@ module ClientForPoslynx
 
   describe Data::Requests::PinPadReset do
 
-    it_behaves_like "a data object"
+    it_behaves_like "a request data object"
 
     it "Serializes to a PLRequest XML document for a PPRESET request" do
       mac = Data::Requests::DEFAULT_CLIENT_MAC
