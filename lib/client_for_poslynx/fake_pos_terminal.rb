@@ -39,7 +39,7 @@ module ClientForPoslynx
           raise e
         end
 
-        user_interface.indicate_waiting_for_connection
+        user_interface.client_disconnected
       end
 
     ensure

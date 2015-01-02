@@ -6,6 +6,9 @@ module ClientForPoslynx
   module FakePosTerminal
     class ConsoleUserInterface
 
+      # This module is included by classes acting as components
+      # of the console UI, needing to perform console I/O
+      # interactions.
       module IsUI_Component
         extend Forwardable
         include FakePosTerminal::ValueFormatting
