@@ -1,0 +1,6 @@
+ClientForPoslynx Gem development to-do items
+============================================
+
+Extract the fake POS terminal into a separate gem since it
+introduces Gem dependencies that ClientForPoslynx does not
+otherwise have.
