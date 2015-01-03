@@ -36,10 +36,6 @@ module ClientForPoslynx
           self.user_text_line_handler = nil
         end
 
-        def term_manipulator
-          ui_context.term_manipulator
-        end
-
         def reset(idle_prompt=nil)
           self.idle_prompt = idle_prompt if idle_prompt
           display_content format_welcome_with_idle_prompt
