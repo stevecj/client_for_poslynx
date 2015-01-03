@@ -43,3 +43,15 @@ Version 0.3.0
 - Change word separators in poslynx_client_console from under-
   scores to dashes.
 - Fake Poslynx includes signature image data in response.
+
+Version 0.9.0
+- Add a network client in the form of an EventManager protocol.
+- Add a structured network client for use from within an irb
+  console.
+- Add ExampleRequestFactory class.
+- Remove the client console script aince the structured client
+  example request factory now provide the same capabilities from
+  within any irb session.
+- Overhaul the fake pos terminal script to be based on
+  EventMachine and to allow request processing to be interrupted
+  by the receipt of a new request.
