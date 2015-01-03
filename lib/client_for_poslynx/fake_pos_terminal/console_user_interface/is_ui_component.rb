@@ -38,7 +38,7 @@ module ClientForPoslynx
 
         def reset(idle_prompt=nil)
           self.idle_prompt = idle_prompt if idle_prompt
-          display_content format_welcome_with_idle_prompt
+          display_content content_fmt.welcome_with_idle_prompt self.idle_prompt
         end
 
         def display_content(content, options = {})
@@ -66,58 +66,18 @@ module ClientForPoslynx
         end
 
         def show_message(text_lines)
-          display_content format_multiline_message( text_lines )
+          display_content content_fmt.multiline_message( text_lines )
         end
 
         def show_message_with_buttons(text_lines, button_labels)
           content =
-            format_multiline_message( text_lines ) <<
-            format_buttons( button_labels )
+            content_fmt.multiline_message( text_lines ) <<
+            content_fmt.buttons( button_labels )
           display_content content
         end
 
-        def format_multiline_message(text_lines)
-          centered_lines = text_lines.map { |text| text.center(68) }
-          "\n" << centered_lines * "\n" << "\n\n"
-        end
-
-        def format_buttons(button_labels)
-          button_strings = button_labels.map { |label| "[ #{label} ]" }
-          tot_button_space = button_strings.map(&:length).inject{ |m, length| m + length }
-          tot_marginal_space = 68 - tot_button_space
-          padding_size = tot_marginal_space / ( button_strings.length * 2 )
-          padding = ' ' * padding_size
-          button_strings.map! { |string| padding + string + padding }
-          ( button_strings * '' ).center( 68 )
-        end
-
         def display_signature_entry_box
-          display_content format_signature_entry_box
-        end
-
-        def format_welcome_with_idle_prompt
-'
-                        ___       _    _            ___
-             |   |   | |    |    / \  / \  |     | |
-             |   |   | |    |   |    |   | |\   /| |    
-             |   |   | |--  |   |    |   | | \ / | |--
-             |  / \  | |    |   |    |   | |  |  | |    
-              \/   \/  |___ |___ \_/  \_/  |  |  | |___
-
-' + "  (#{idle_prompt})\n"
-        end
-
-        def format_signature_entry_box
-'
-
-      Sign here...
-     -----------------------------------------------------------
-    |                                                           |
-    |                                                           |
-    |                                                           |
-     -----------------------------------------------------------
-
-'
+          display_content content_fmt.signature_entry_box
         end
 
         def fetch_confirmation(result_listener)
@@ -169,6 +129,10 @@ module ClientForPoslynx
           puts <<-EOS
 |__________________________________________________________________|
           EOS
+        end
+
+        def content_fmt
+          ConsoleUserInterface::ContentFormatter
         end
 
         def clear_screen

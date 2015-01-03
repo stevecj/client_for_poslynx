@@ -3,6 +3,7 @@
 #require_relative 'format'
 require_relative 'console_user_interface/is_ui_component'
 require_relative 'console_user_interface/ui_context'
+require_relative 'console_user_interface/content_formatter'
 require_relative 'console_user_interface/term_manipulator'
 require_relative 'console_user_interface/user_text_line_fetcher'
 require_relative 'console_user_interface/user_raw_text_line_fetcher'

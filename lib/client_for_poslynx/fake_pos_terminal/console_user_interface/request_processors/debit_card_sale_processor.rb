@@ -64,7 +64,7 @@ module ClientForPoslynx
           def show_pin_request(options = {})
             show_as_filled_in = options.fetch(:filled_in){ false }
             input_box = show_as_filled_in ? '[ * * * * ]' : '[ _ _ _ _ ]'
-            content = format_multiline_message( [
+            content = content_fmt.multiline_message( [
               'Please enter your PIN...',
               input_box
             ])
