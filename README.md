@@ -16,25 +16,32 @@ Features:
 
 ## Overview
 
-The client_for_poslynx gem provides network adapters that can be
-used to send requests to a POSLynx unit and receive the responses
-to those requests.  The gem also includes data models with XML
-serialization/deserialization that are used by those network
-adapters or may be used as part of a different network adapter if
-you prefer to build your own.
+The `client_for_poslynx` gem provides network adapters that can
+be used to send requests to a POSLynx unit and receive the
+responses to those requests.  The gem also includes data models
+with XML serialization/deserialization that are used by those
+network adapters or may be used as part of a different network
+adapter if you prefer to build your own.
 
 The first network adapter provided is in the form of a protocol
 for EventMachine. EventMachine is a gem for implementing
 event-driven communication clients and servers.  Essentially,
-being event-driven means that requests are sent asynchronously,
-and the application receives a call-back when the server
-responds (or the connection is lost, etc.)
+being event-driven means that requests are sent and responses are
+received asynchronously.  The application receives a call-back
+when the server responds or the connection is lost, etc.
 
 The second network adapter this gem provides is a "structured"
 (as opposed to event-driven) API.  This is primarily provided
 as a convenience for use in situations where the event-driven
 API is inconvenient, such as when experimenting with the gem
 from an irb command line session.
+
+In addition to the network client libraries, this gem includes
+a script that acts as a fake POSLynx + PIN Pad.  This is useful
+when you are working without access to an actual POSLynx and
+PIN Pad, and want to test your client code and try out
+workflows.  This script will probably be extracted into a
+separate gem soon.
 
 ## Usage
 
@@ -153,6 +160,23 @@ for EventMachine.
     # Terminating the event loop
     # The event loop has ended
     # Bye
+
+### Using the `fake_pos_terminal` script
+
+The `fake_pos_terminal` script runs a console-based facsimile of
+a PIN pad connected to a POSLynx device, listening on a local TCP
+port.  The script takes a single parameter indicating the port
+number to listen on.
+
+Under some circumstances, if you have installed the
+`client_for_poslynx` gem using Bundler, you might need to use
+`bundle exec` to run the script.
+
+To run the script listening on port 3010 using `bundle exec`:
+
+    $ bundle exec fake_pos_terminal 3010
+
+To stop the script, send an interrupt signal by pressing Ctrl+C.
 
 ## Known Limitations
 
