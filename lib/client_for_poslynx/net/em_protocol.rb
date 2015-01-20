@@ -2,7 +2,7 @@
 
 require 'eventmachine'
 
-module EventMachine
+module EM
   module Protocols
 
     # Sends requests to and receives responses from a Precidia
