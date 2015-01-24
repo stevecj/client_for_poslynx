@@ -86,6 +86,7 @@ module ClientForPoslynx
         def initialize(connection_listener, connection_initiator)
           @connection_listener  = connection_listener
           @connection_initiator = connection_initiator
+          @state = :prepared
         end
 
         def send_request(request_data, options={})
@@ -103,13 +104,32 @@ module ClientForPoslynx
           end
         end
 
+        def closed?
+          state == :closed
+        end
+
         private
 
         attr_reader :connection_listener, :connection_initiator
+        attr_accessor :state
 
         def _send_request(request_data, options)
-          connection_listener.on_receive_response = options[:responded]
+          self.state = :connected
+          connection_listener.on_receive_response = ->(*args){
+            send_request_done!
+            options[:responded].call *args if options[:responded]
+          }
+          connection_listener.on_unbind = ->(*args){
+            send_request_done!
+            self.state = :closed
+            options[:failed].call *args if options[:failed]
+          }
           _connection_handler.send_request request_data
+        end
+
+        def send_request_done!
+          connection_listener.on_receive_response = nil
+          connection_listener.on_unbind = nil
         end
 
         def connect

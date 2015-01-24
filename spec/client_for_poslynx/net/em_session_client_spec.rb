@@ -113,6 +113,10 @@ module ClientForPoslynx
         expect( on_failed_connection ).not_to have_received( :call )
       end
 
+      it "Reports failure when attempt to make connection fails"
+
+      #TODO: Test for both non-SSL and SSL cases. Probably make that distinction
+      #      in HandlesConnection and test that separately.
     end
 
     describe "session" do
@@ -123,7 +127,9 @@ module ClientForPoslynx
         }
         connection_handlers[0].post_init
         allow( connection_handlers[0] ).to receive( :send_request )
+
         session.send_request :the_request
+
         expect( connection_handlers[0] ).
           to have_received( :send_request ).
           with( :the_request )
@@ -170,16 +176,21 @@ module ClientForPoslynx
           connection_handlers[1].receive_response :the_response
           expect( response ).to eq( :the_response )
         end
+
+        it "reports failure and closes session when connection closed before response returned" do
+          connection_handlers[0].post_init
+          failed_listener = double( :failed_listener, call: nil )
+          allow( connection_handlers[0] ).to receive( :send_request )
+          session.send_request :the_request, failed: failed_listener
+          connection_handlers[0].unbind
+          expect( failed_listener ).to have_received :call
+          expect( session ).to be_closed
+        end
       end
 
       # TODO:
-      # - Receive failure callback when connection is lost while response
-      #   is pending.
       # - Correlate request/response types to distinguish between a session
       #   being supplanted and the new session that is supplanting it.
-      # - Provide a means of callback for error during request send process,
-      #   including error trying to re-connect before request or connection
-      #   lost between send & receive.
     end
 
   end
