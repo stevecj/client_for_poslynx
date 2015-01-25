@@ -70,7 +70,7 @@ module ClientForPoslynx
           connection_base_class.instantiated_count
         }.by 1
 
-        connection_handlers[0].post_init
+        connection_handlers[0].connection_completed
 
         expect( on_connected         ).to     have_received( :call )
         expect( on_failed_connection ).not_to have_received( :call )
@@ -78,7 +78,7 @@ module ClientForPoslynx
 
       it "Reports conection when already currently connected" do
         subject.start_session
-        connection_handlers[0].post_init
+        connection_handlers[0].connection_completed
 
         expect{
           subject.start_session(
@@ -95,7 +95,7 @@ module ClientForPoslynx
 
       it "Reports conection on establishment of new connection following disconnect" do
         subject.start_session
-        connection_handlers[0].post_init
+        connection_handlers[0].connection_completed
         connection_handlers[0].unbind
 
         expect{
@@ -107,7 +107,7 @@ module ClientForPoslynx
           connection_base_class.instantiated_count
         }.by 1
 
-        connection_handlers[1].post_init
+        connection_handlers[1].connection_completed
 
         expect( on_connected         ).to     have_received( :call )
         expect( on_failed_connection ).not_to have_received( :call )
@@ -125,7 +125,7 @@ module ClientForPoslynx
         subject.start_session connected: ->(sess){
           session = sess
         }
-        connection_handlers[0].post_init
+        connection_handlers[0].connection_completed
         allow( connection_handlers[0] ).to receive( :send_request )
 
         session.send_request :the_request
@@ -151,10 +151,10 @@ module ClientForPoslynx
         end
 
         it "calls back to response listener when response received" do
-          connection_handlers[0].post_init
+          connection_handlers[0].connection_completed
           allow( connection_handlers[0] ).to receive( :send_request )
           response = nil
-          session.send_request :the_request, responded: ->(sess, resp){
+          session.send_request :the_request, responded: ->(resp){
             response = resp
           }
           connection_handlers[0].receive_response :the_response
@@ -162,14 +162,14 @@ module ClientForPoslynx
         end
 
         it "transparently reconnects following connection close during session" do
-          connection_handlers[0].post_init
+          connection_handlers[0].connection_completed
           connection_handlers[0].unbind
           response = nil
-          session.send_request :the_request, responded: ->(sess, resp){
+          session.send_request :the_request, responded: ->(resp){
             response = resp
           }
           allow( connection_handlers[1] ).to receive( :send_request )
-          connection_handlers[1].post_init
+          connection_handlers[1].connection_completed
           expect( connection_handlers[1] ).
             to have_received( :send_request ).
             with :the_request
@@ -177,8 +177,22 @@ module ClientForPoslynx
           expect( response ).to eq( :the_response )
         end
 
+        it "reports failure and closes session when re-opening connection fails" do
+          connection_handlers[0].connection_completed
+          connection_handlers[0].unbind
+          response = nil
+          failed_listener = double( :failed_listener, call: nil )
+          session.send_request(
+            :the_request,
+            responded: double( :responded_listener ),
+            failed: failed_listener
+          )
+          connection_handlers[1].unbind
+          expect( failed_listener ).to have_received( :call )
+        end
+
         it "reports failure and closes session when connection closed before response returned" do
-          connection_handlers[0].post_init
+          connection_handlers[0].connection_completed
           failed_listener = double( :failed_listener, call: nil )
           allow( connection_handlers[0] ).to receive( :send_request )
           session.send_request :the_request, failed: failed_listener

@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+
+value_args = []
+option_args = []
+
+$*.each do |arg|
+  list = arg =~ /^--/ ? option_args : value_args
+  list << arg
+end
+
+# Drop command line arguments so 1st argument won't be treated as
+# file name for input.
+$*.replace []
+
+show_usage = false
+show_usage ||= !( (2..3) === value_args.length )
+show_usage ||= option_args.any?{ |a| a !~ /--(no-)?ssl/ }
+
+if show_usage
+  puts
+  puts "Usage:"
+  puts " em_session_client_send_message <host> <port-number> [<client-mac>] [--ssl|--no-ssl]"
+  puts
+  puts "Sends a Pin Pad Initialize request to a real or fake POSLynx unit"
+  puts "using the ClientForPoslynx::Net::EM_SessionClient with debug logging"
+  puts "output to the console, and then prints success or failure information"
+  puts "to the console."
+  puts
+  puts "This is useful for quickly checking whether your POSLynx is connected"
+  puts "and available.  It is also useful as a manual full-stack test of the"
+  puts "EM_SessionClient itself."
+  puts
+else
+  host, port_number, client_mac = value_args
+  port_number = port_number.to_i
+
+  require 'client_for_poslynx'
+
+  debug_logger = ->(message) do
+    puts message
+    puts
+  end
+
+  client = ClientForPoslynx::Net::EM_SessionClient.new(
+    host, port_number,
+    debug_logger: debug_logger,
+  )
+
+  req_factory = ClientForPoslynx::ExampleRequestFactory.new(client_mac)
+  init_request = req_factory.pin_pad_initialize_request
+  p init_request
+
+  puts
+
+  EM.run do
+    client.start_session(
+      connected: ->(session) {
+        debug_logger.call "* Connected following client#start_session"
+        session.send_request(
+          init_request,
+          responded: ->(response) {
+            debug_logger.call(
+              "* Received response from session#send_request...\n" <<
+              response.inspect
+            )
+            EM.stop_event_loop
+          },
+          failed: ->() {
+            debug_logger.call "* Received failure from session#send_request"
+            EM.stop_event_loop
+          }
+        )
+      },
+      failed_connection: ->(session) {
+        debug_logger.call "* Connection failed following #start_session"
+        EM.stop_event_loop
+      }
+    )
+    EM.error_handler do |e|
+      debug_logger.call "* Exception raised: " << e.message << (e.backtrace * "\n")
+      EM.stop_event_loop
+    end
+  end
+
+end

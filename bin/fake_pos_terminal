@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-option_args = []
 value_args = []
+option_args = []
 
 $*.each do |arg|
   list = arg =~ /^--/ ? option_args : value_args

@@ -12,21 +12,34 @@ module ClientForPoslynx
       end
 
       module HandlesConnection
-        attr_reader :listener
+        attr_reader :listener, :debug_logger
 
-        def initialize(listener)
+        def initialize(listener, opts={})
           @listener = listener
+          @debug_logger = opts.fetch( :debug_logger )
+          debug_logger.call(
+            "Initialized connection handler (object_id: #{object_id})"
+          )
         end
 
-        def post_init
-          listener.post_init self
+        def connection_completed
+          debug_logger.call(
+            "Connection handler (object_id: #{object_id}) received connection_completed"
+          )
+          listener.connection_completed self
         end
 
         def receive_response(response)
+          debug_logger.call(
+            "Connection handler (object_id: #{object_id}) received receive_response with response type #{response.class.name}"
+          )
           listener.receive_response response
         end
 
         def unbind
+          debug_logger.call(
+            "Connection handler (object_id: #{object_id}) received unbind"
+          )
           listener.unbind self
         end
       end
@@ -37,7 +50,7 @@ module ClientForPoslynx
 
         attr_accessor(
           :on_unbind,
-          :on_post_init,
+          :on_connection_completed,
           :on_receive_response,
         )
 
@@ -49,10 +62,10 @@ module ClientForPoslynx
           use_event_listener :receive_response, response
         end
 
-        def post_init(conn_handler)
+        def connection_completed(conn_handler)
           self.latest_conn_handler = conn_handler
           self.is_connected = true
-          use_event_listener :post_init
+          use_event_listener :connection_completed
         end
 
         def unbind(conn_handler)
@@ -97,8 +110,13 @@ module ClientForPoslynx
             # connection handler instance after disconnect, so make
             # the request after re-connecting with a new connection
             # handler instance.
-            connection_listener.on_post_init = ->(session){
+            connection_listener.on_connection_completed = ->(session){
+              connect_done!
               _send_request request_data, options
+            }
+            connection_listener.on_unbind = ->(session){
+              connect_done!
+              options[:failed].call if options[:failed]
             }
             connect
           end
@@ -110,19 +128,24 @@ module ClientForPoslynx
 
         private
 
+        def connect_done!
+          connection_listener.on_connection_completed = nil
+          connection_listener.on_unbind = nil
+        end
+
         attr_reader :connection_listener, :connection_initiator
         attr_accessor :state
 
         def _send_request(request_data, options)
           self.state = :connected
-          connection_listener.on_receive_response = ->(*args){
+          connection_listener.on_receive_response = ->(session, response){
             send_request_done!
-            options[:responded].call *args if options[:responded]
+            options[:responded].call(response) if options[:responded]
           }
-          connection_listener.on_unbind = ->(*args){
+          connection_listener.on_unbind = ->(*){
             send_request_done!
             self.state = :closed
-            options[:failed].call *args if options[:failed]
+            options[:failed].call if options[:failed]
           }
           _connection_handler.send_request request_data
         end
@@ -138,9 +161,17 @@ module ClientForPoslynx
 
       end
 
-      def initialize(host, port, opts)
+      module NullDebugLogger
+        extend self
+
+        def call(message)
+        end
+      end
+
+      def initialize(host, port, opts={})
         @host = host
         @port = port
+        @debug_logger = opts.fetch( :debug_logger ) { NullDebugLogger }
         @em_system = opts.fetch(:em_system){ ::EM }
         connection_base_class = opts.fetch(:connection_base_class) { EM_ConnectionBase }
         @connection_handler_class = Class.new( connection_base_class ) do
@@ -156,13 +187,24 @@ module ClientForPoslynx
         if connection_listener.is_connected
           opts[:connected].call( session ) if opts[:connected]
         else
-          connection_listener.on_unbind    = opts[:failed_connection]
-          connection_listener.on_post_init = opts[:connected]
+          connection_listener.on_connection_completed = ->(session) {
+            connect_done!
+            opts[:connected].call( session ) if opts[:connected]
+          }
+          connection_listener.on_unbind = ->(session) {
+            connect_done!
+            opts[:failed_connection].call( session ) if opts[:failed_connection]
+          }
           connect
         end
       end
 
       private
+
+      def connect_done!
+        connection_listener.on_connection_completed = nil
+        connection_listener.on_unbind = nil
+      end
 
       attr_reader(
         :host,
@@ -171,12 +213,16 @@ module ClientForPoslynx
         :connection_handler_class,
         :session_pool,
         :connection_listener,
+        :debug_logger,
       )
 
+      #TODO: Probably move connect responsibility into session.
       def connect
+        debug_logger.call "session client initiating connection"
         em_system.connect(
           host, port, connection_handler_class,
-          connection_listener
+          connection_listener,
+          debug_logger: debug_logger,
         )
       end
 
