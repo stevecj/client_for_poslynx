@@ -1,17 +1,18 @@
 # coding: utf-8
 
+require_relative 'connection_accessor/connection_listener'
+
 module ClientForPoslynx
   module Net
     class EM_SessionClient
 
       class ConnectionAccessor
-        def initialize(em_system, host, port, handler_class, connection_listener, opts={})
-          @em_system           = em_system
-          @host                = host
-          @port                = port
-          @handler_class       = handler_class
-          @connection_listener = connection_listener
-          @debug_logger        = opts.fetch( :debug_logger )
+        def initialize(em_system, host, port, handler_class, opts={})
+          @em_system      = em_system
+          @host           = host
+          @port           = port
+          @handler_class  = handler_class
+          @debug_logger   = opts.fetch( :debug_logger )
         end
 
         def call(opts={})
@@ -40,6 +41,10 @@ module ClientForPoslynx
           :connection_listener,
           :debug_logger,
         )
+
+        def connection_listener
+          @connection_listener ||= ConnectionAccessor::ConnectionListener.new
+        end
 
         def open_connection(opts)
           debug_logger.call "session client initiating connection"

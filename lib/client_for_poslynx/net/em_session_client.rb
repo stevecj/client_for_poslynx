@@ -1,6 +1,5 @@
 # coding: utf-8
 
-require_relative 'em_session_client/connection_listener'
 require_relative 'em_session_client/connection_accessor'
 require_relative 'em_session_client/handles_connection'
 require_relative 'em_session_client/session'
@@ -56,13 +55,9 @@ module ClientForPoslynx
         @session_pool ||= []
       end
 
-      def connection_listener
-        @connection_listener ||= EM_SessionClient::ConnectionListener.new
-      end
-
       def connection_accessor
         @connection_accessor ||= ConnectionAccessor.new(
-          em_system, host, port, connection_handler_class, connection_listener,
+          em_system, host, port, connection_handler_class,
           debug_logger: debug_logger,
         )
       end
