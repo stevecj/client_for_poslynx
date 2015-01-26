@@ -46,7 +46,7 @@ module ClientForPoslynx
           if el
             session = session_pool.last
             session._connection_handler = latest_conn_handler
-            el.call session, *args
+            el.call *args
           end
         end
       end

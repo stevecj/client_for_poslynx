@@ -49,18 +49,20 @@ module ClientForPoslynx
       let( :on_connected         ) { double( :on_connected, :call => nil ) }
       let( :on_failed_connection ) { double( :on_failed_connection, :call => nil ) }
 
-      it "Reports error on failure to connect" do
+      it "Reports error w/ session on failure to connect" do
         subject.start_session(
           connected:         on_connected,
           failed_connection: on_failed_connection,
         )
         connection_handlers[0].unbind
 
-        expect( on_connected         ).not_to have_received( :call )
-        expect( on_failed_connection ).to     have_received( :call )
+        expect( on_connected ).not_to have_received( :call )
+        expect( on_failed_connection ).to have_received( :call ) { |session|
+          expect( session ).to respond_to( :to_em_session )
+        }
       end
 
-      it "Reports connection on establishment of initial connection" do
+      it "Reports connection w/ sesion on establishment of initial connection" do
         expect{
           subject.start_session(
             connected:         on_connected,
@@ -72,11 +74,13 @@ module ClientForPoslynx
 
         connection_handlers[0].connection_completed
 
-        expect( on_connected         ).to     have_received( :call )
+        expect( on_connected ).to have_received( :call ) { |session|
+          expect( session ).to respond_to( :to_em_session )
+        }
         expect( on_failed_connection ).not_to have_received( :call )
       end
 
-      it "Reports conection when already currently connected" do
+      it "Reports conection w/ session when already currently connected" do
         subject.start_session
         connection_handlers[0].connection_completed
 
@@ -89,11 +93,13 @@ module ClientForPoslynx
           connection_base_class.instantiated_count
         }
 
-        expect( on_connected         ).to     have_received( :call )
+        expect( on_connected         ).to     have_received( :call ) { |session|
+          expect( session ).to respond_to( :to_em_session )
+        }
         expect( on_failed_connection ).not_to have_received( :call )
       end
 
-      it "Reports conection on establishment of new connection following disconnect" do
+      it "Reports conection w/ session on establishment of new connection following disconnect" do
         subject.start_session
         connection_handlers[0].connection_completed
         connection_handlers[0].unbind
@@ -109,11 +115,11 @@ module ClientForPoslynx
 
         connection_handlers[1].connection_completed
 
-        expect( on_connected         ).to     have_received( :call )
+        expect( on_connected         ).to     have_received( :call ) { |session|
+          expect( session ).to respond_to( :to_em_session )
+        }
         expect( on_failed_connection ).not_to have_received( :call )
       end
-
-      it "Reports failure when attempt to make connection fails"
 
       #TODO: Test for both non-SSL and SSL cases. Probably make that distinction
       #      in HandlesConnection and test that separately.

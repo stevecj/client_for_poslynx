@@ -14,12 +14,16 @@ module ClientForPoslynx
           @state = :prepared
         end
 
+        def to_em_session
+          self
+        end
+
         def send_request(request_data, options={})
           connect(
-            connected: ->(session) {
+            connected: ->() {
               _send_request request_data, options
             },
-            failed_connection: ->(session) {
+            failed_connection: ->(*) {
               options[:failed].call if options[:failed]
             }
           )
@@ -30,7 +34,7 @@ module ClientForPoslynx
         end
 
         def connect(opts={})
-          connection_accessor.call(self, opts)
+          connection_accessor.call(opts)
         end
 
         private
@@ -45,11 +49,11 @@ module ClientForPoslynx
 
         def _send_request(request_data, options)
           self.state = :connected
-          connection_listener.on_receive_response = ->(session, response){
+          connection_listener.on_receive_response = ->(response){
             send_request_done!
-            options[:responded].call(response) if options[:responded]
+            options[:responded].call( response ) if options[:responded]
           }
-          connection_listener.on_unbind = ->(*){
+          connection_listener.on_unbind = ->(){
             send_request_done!
             self.state = :closed
             options[:failed].call if options[:failed]

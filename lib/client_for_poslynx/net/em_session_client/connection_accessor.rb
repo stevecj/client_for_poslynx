@@ -14,11 +14,11 @@ module ClientForPoslynx
           @debug_logger        = opts.fetch( :debug_logger )
         end
 
-        def call(session, opts={})
+        def call(opts={})
           if connection_listener.is_connected
-            invoke_callable opts[:connected], session
+            invoke_callable opts[:connected]
           else
-            open_connection session, opts
+            open_connection opts
           end
         end
 
@@ -33,7 +33,7 @@ module ClientForPoslynx
           :debug_logger,
         )
 
-        def open_connection(session, opts)
+        def open_connection(opts)
           debug_logger.call "session client initiating connection"
           em_system.connect(
             host, port, handler_class,
@@ -41,15 +41,15 @@ module ClientForPoslynx
             debug_logger: debug_logger,
           )
           unless opts.empty?
-            connection_listener.on_connection_completed = connection_reaction( opts[:connected], session )
-            connection_listener.on_unbind = connection_reaction( opts[:failed_connection], session )
+            connection_listener.on_connection_completed = connection_reaction( opts[:connected] )
+            connection_listener.on_unbind = connection_reaction( opts[:failed_connection] )
           end
         end
 
-        def connection_reaction(response_listener, session)
-          ->(session) {
+        def connection_reaction(response_listener)
+          ->() {
             connect_done!
-            invoke_callable response_listener, session
+            invoke_callable response_listener
           }
         end
 

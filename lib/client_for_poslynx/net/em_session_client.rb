@@ -30,7 +30,10 @@ module ClientForPoslynx
       def start_session(opts = {})
         session = EM_SessionClient::Session.new( connection_listener, connection_accessor )
         session_pool << session
-        session.connect opts
+        session.connect(
+          connected:         session_init_listener_for( opts[:connected],         session ),
+          failed_connection: session_init_listener_for( opts[:failed_connection], session ),
+        )
       end
 
       private
@@ -40,7 +43,6 @@ module ClientForPoslynx
         :port,
         :em_system,
         :connection_base_class,
-        :connection_handler_class,
         :debug_logger,
       )
 
@@ -63,6 +65,12 @@ module ClientForPoslynx
           em_system, host, port, connection_handler_class, connection_listener,
           debug_logger: debug_logger,
         )
+      end
+
+      def session_init_listener_for(listener, session)
+        listener.nil? ?
+          ->(*) { } :
+          ->(*) { listener.call session }
       end
     end
 
