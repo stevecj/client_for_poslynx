@@ -1,8 +1,8 @@
 # coding: utf-8
 
+require_relative 'em_session_client/connection_listener'
 require_relative 'em_session_client/connection_accessor'
 require_relative 'em_session_client/handles_connection'
-require_relative 'em_session_client/connection_listener'
 require_relative 'em_session_client/session'
 
 module ClientForPoslynx
@@ -28,7 +28,7 @@ module ClientForPoslynx
       end
 
       def start_session(opts = {})
-        session = EM_SessionClient::Session.new( connection_listener, connection_accessor )
+        session = EM_SessionClient::Session.new( connection_accessor )
         session_pool << session
         session.connect(
           connected:         session_init_listener_for( opts[:connected],         session ),
@@ -57,7 +57,7 @@ module ClientForPoslynx
       end
 
       def connection_listener
-        @connection_listener ||= EM_SessionClient::ConnectionListener.new( session_pool )
+        @connection_listener ||= EM_SessionClient::ConnectionListener.new
       end
 
       def connection_accessor

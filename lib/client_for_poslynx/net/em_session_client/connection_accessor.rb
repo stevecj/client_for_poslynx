@@ -16,10 +16,18 @@ module ClientForPoslynx
 
         def call(opts={})
           if connection_listener.is_connected
-            invoke_callable opts[:connected]
+            invoke_callable opts[:connected], connection_listener.latest_conn_handler
           else
             open_connection opts
           end
+        end
+
+        def on_unbind=(value)
+          connection_listener.on_unbind = value
+        end
+
+        def on_receive_response=(value)
+          connection_listener.on_receive_response = value
         end
 
         private
@@ -47,9 +55,9 @@ module ClientForPoslynx
         end
 
         def connection_reaction(response_listener)
-          ->() {
+          ->(conn_handler) {
             connect_done!
-            invoke_callable response_listener
+            invoke_callable response_listener, conn_handler
           }
         end
 

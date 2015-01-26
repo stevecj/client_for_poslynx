@@ -8,8 +8,7 @@ module ClientForPoslynx
         attr_accessor :_connection_handler
         private       :_connection_handler
 
-        def initialize(connection_listener, connection_accessor)
-          @connection_listener  = connection_listener
+        def initialize(connection_accessor)
           @connection_accessor  = connection_accessor
           @state = :prepared
         end
@@ -20,10 +19,12 @@ module ClientForPoslynx
 
         def send_request(request_data, options={})
           connect(
-            connected: ->() {
+            connected: ->(conn_handler) {
+              self._connection_handler = conn_handler
               _send_request request_data, options
             },
-            failed_connection: ->(*) {
+            failed_connection: ->(conn_handler) {
+              self._connection_handler = conn_handler
               options[:failed].call if options[:failed]
             }
           )
@@ -39,21 +40,18 @@ module ClientForPoslynx
 
         private
 
-        attr_reader :connection_listener, :connection_accessor
+        attr_reader :connection_accessor
         attr_accessor :state
-
-        def connect_done!
-          connection_listener.on_connection_completed = nil
-          connection_listener.on_unbind = nil
-        end
 
         def _send_request(request_data, options)
           self.state = :connected
-          connection_listener.on_receive_response = ->(response){
+          connection_accessor.on_receive_response = ->(conn_handler, response){
+            self._connection_handler = conn_handler
             send_request_done!
             options[:responded].call( response ) if options[:responded]
           }
-          connection_listener.on_unbind = ->(){
+          connection_accessor.on_unbind = ->(conn_handler){
+            self._connection_handler = conn_handler
             send_request_done!
             self.state = :closed
             options[:failed].call if options[:failed]
@@ -62,8 +60,8 @@ module ClientForPoslynx
         end
 
         def send_request_done!
-          connection_listener.on_receive_response = nil
-          connection_listener.on_unbind = nil
+          connection_accessor.on_receive_response = nil
+          connection_accessor.on_unbind = nil
         end
       end
 
