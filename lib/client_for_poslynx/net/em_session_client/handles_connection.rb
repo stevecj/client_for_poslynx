@@ -4,6 +4,10 @@ module ClientForPoslynx
   module Net
     class EM_SessionClient
 
+      # This module is mixed into an EventManager connection handler
+      # class with the POSLynx client protocol included (or surrogate
+      # thereof) and forwards responses we care about to the connection
+      # listener.
       module HandlesConnection
         attr_reader :listener, :debug_logger
 
@@ -33,7 +37,7 @@ module ClientForPoslynx
           debug_logger.call(
             "Connection handler (object_id: #{object_id}) received unbind"
           )
-          listener.unbind self
+          listener.unbind
         end
       end
 

@@ -6,39 +6,57 @@ module ClientForPoslynx
       class ConnectionAccessor
 
         class ConnectionListener
+
+          Callbacks ||= Struct.new(
+            :unbind,
+            :connection_completed,
+            :receive_response,
+          )
+
           attr_accessor :is_connected
           private       :is_connected=
           attr_accessor :latest_conn_handler
 
-          attr_accessor(
-            :on_unbind,
-            :on_connection_completed,
-            :on_receive_response,
-          )
 
-          def receive_response(response)
-            use_event_listener :receive_response, response
+          def set_callbacks
+            self.callbacks = Callbacks.new.tap{ |cbs|
+              yield cbs
+            }
+          end
+
+          def clear_callbacks
+            self.callbacks = nil
           end
 
           def connection_completed(conn_handler)
             self.latest_conn_handler = conn_handler
             self.is_connected = true
-            use_event_listener :connection_completed
+            make_callback :connection_completed
           end
 
-          def unbind(conn_handler)
+          def unbind
             self.is_connected = false
-            use_event_listener :unbind
+            make_callback :unbind
+          end
+
+          def receive_response(response)
+            make_callback :receive_response, response
           end
 
           private
 
+          attr_writer :callbacks
+
+          def callbacks
+            @callbacks ||= Callbacks.new
+          end
+
           # Calls back to an event listener (if any) and
           # clears the listener
-          def use_event_listener(kind, *args)
-            el = self.send( "on_#{kind}" )
-            self.send "on_#{kind}=", nil
-            el.call latest_conn_handler, *args if el
+          def make_callback(kind, *args)
+            callback = callbacks.send( kind )
+            clear_callbacks
+            callback.call latest_conn_handler, *args if callback
           end
         end
 

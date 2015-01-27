@@ -5,11 +5,13 @@ module ClientForPoslynx
     class EM_SessionClient
 
       class Session
-        attr_accessor :_connection_handler
-        private       :_connection_handler
+        # To allow exmining the state of the connection most
+        # recently used by the session.
+        attr_accessor :connection_handler
+        private       :connection_handler=
 
         def initialize(connection_accessor)
-          @connection_accessor  = connection_accessor
+          @connection_accessor = connection_accessor
           @state = :prepared
         end
 
@@ -17,16 +19,21 @@ module ClientForPoslynx
           self
         end
 
-        def send_request(request_data, options={})
-          connect(
-            connected: ->(conn_handler) {
-              self._connection_handler = conn_handler
-              _send_request request_data, options
-            },
-            failed_connection: ->(conn_handler) {
-              self._connection_handler = conn_handler
-              options[:failed].call if options[:failed]
-            }
+        def send_request(request_data, opts={})
+          connection_accessor.send_request(
+            request_data,
+            responded: result_listener_for(
+              ->(response){
+                self.state = :connected
+                opts[:responded].call( response ) if opts[:responded]
+              }
+            ),
+            failed: result_listener_for(
+              ->(){
+                self.state = :closed
+                opts[:failed].call if opts[:failed]
+              }
+            )
           )
         end
 
@@ -35,7 +42,20 @@ module ClientForPoslynx
         end
 
         def connect(opts={})
-          connection_accessor.call(opts)
+          connection_accessor.get_connection(
+            connected: result_listener_for(
+              ->(){
+                self.state = :connected
+                opts[:connected].call if opts[:connected]
+              }
+            ),
+            failed_connection: result_listener_for(
+              ->(){
+                self.state = :closed
+                opts[:failed_connection].call if opts[:failed_connection]
+              }
+            )
+          )
         end
 
         private
@@ -43,25 +63,11 @@ module ClientForPoslynx
         attr_reader :connection_accessor
         attr_accessor :state
 
-        def _send_request(request_data, options)
-          self.state = :connected
-          connection_accessor.on_receive_response = ->(conn_handler, response){
-            self._connection_handler = conn_handler
-            send_request_done!
-            options[:responded].call( response ) if options[:responded]
+        def result_listener_for(listener)
+          ->(conn_handler, *args) {
+            self.connection_handler = conn_handler
+            listener.call *args if listener
           }
-          connection_accessor.on_unbind = ->(conn_handler){
-            self._connection_handler = conn_handler
-            send_request_done!
-            self.state = :closed
-            options[:failed].call if options[:failed]
-          }
-          _connection_handler.send_request request_data
-        end
-
-        def send_request_done!
-          connection_accessor.on_receive_response = nil
-          connection_accessor.on_unbind = nil
         end
       end
 

@@ -6,6 +6,11 @@ module ClientForPoslynx
   module Net
     class EM_SessionClient
 
+      # Since we want to be able to reconnect and proceed after a connection
+      # has been lost, and we cannot reuse an EventManager connection
+      # handler after its connection has been closed.
+      # This class allows us to make new connections using new connection
+      # handlers as needed.
       class ConnectionAccessor
         def initialize(em_system, host, port, handler_class, opts={})
           @em_system      = em_system
@@ -15,20 +20,25 @@ module ClientForPoslynx
           @debug_logger   = opts.fetch( :debug_logger )
         end
 
-        def call(opts={})
-          if connection_listener.is_connected
-            invoke_callable opts[:connected], connection_listener.latest_conn_handler
+        def get_connection(opts={})
+          if connected?
+            invoke_callable opts[:connected], current_connection_handler
           else
             open_connection opts
           end
         end
 
-        def on_unbind=(value)
-          connection_listener.on_unbind = value
-        end
-
-        def on_receive_response=(value)
-          connection_listener.on_receive_response = value
+        def send_request(request_data, opts)
+          if connected?
+            _send_request request_data, opts
+          else
+            get_connection(
+              connected: ->(*args){
+                _send_request request_data, opts
+              },
+              failed_connection: opts[:failed]
+            )
+          end
         end
 
         private
@@ -42,8 +52,24 @@ module ClientForPoslynx
           :debug_logger,
         )
 
+        def _send_request(request_data, opts)
+          connection_listener.set_callbacks do |c|
+            c.receive_response = opts[:responded]
+            c.unbind = opts[:failed]
+          end
+          current_connection_handler.send_request request_data
+        end
+
+        def current_connection_handler
+          connection_listener.latest_conn_handler
+        end
+
         def connection_listener
           @connection_listener ||= ConnectionAccessor::ConnectionListener.new
+        end
+
+        def connected?
+          connection_listener.is_connected
         end
 
         def open_connection(opts)
@@ -54,21 +80,17 @@ module ClientForPoslynx
             debug_logger: debug_logger,
           )
           unless opts.empty?
-            connection_listener.on_connection_completed = connection_reaction( opts[:connected] )
-            connection_listener.on_unbind = connection_reaction( opts[:failed_connection] )
+            connection_listener.set_callbacks do |c|
+              c.connection_completed = connection_reaction( opts[:connected] )
+              c.unbind               = connection_reaction( opts[:failed_connection] )
+            end
           end
         end
 
         def connection_reaction(response_listener)
           ->(conn_handler) {
-            connect_done!
             invoke_callable response_listener, conn_handler
           }
-        end
-
-        def connect_done!
-          connection_listener.on_connection_completed = nil
-          connection_listener.on_unbind = nil
         end
 
         def invoke_callable(callable, *args)
