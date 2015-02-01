@@ -12,7 +12,18 @@ module ClientForPoslynx
       connection_base_class: connection_base_class,
     ) }
 
-    let( :em_system ) { double( :em_system ) }
+    let( :em_system ) {
+      double( :em_system ).tap { |ems|
+        allow( ems ).to receive :connect do |host, port, handler_class, *handler_args|
+          expect( host ).to eq( :the_host )
+          expect( port ).to eq( :the_port )
+          handler = handler_class.new( *handler_args )
+          connection_handlers << handler
+        end
+      }
+    }
+
+    let( :connection_handlers ) { [] }
 
     let( :connection_base_class ) { Class.new do
       class << self
@@ -33,17 +44,6 @@ module ClientForPoslynx
         end
       end
     end }
-
-    let( :connection_handlers ) { [] }
-
-    before do
-      allow( em_system ).to receive :connect do |host, port, handler_class, *handler_args|
-        expect( host ).to eq( :the_host )
-        expect( port ).to eq( :the_port )
-        handler = handler_class.new( *handler_args )
-        connection_handlers << handler
-      end
-    end
 
     describe "#start_session" do
       let( :on_connected         ) { double( :on_connected, :call => nil ) }
@@ -126,38 +126,31 @@ module ClientForPoslynx
     end
 
     describe "session" do
-      it "can send request to POSLynx" do
-        session = nil
-        subject.start_session connected: ->(sess){
-          session = sess
+      def new_session
+        result = nil
+        subject.start_session connected: ->(session) {
+          result = session
         }
         connection_handlers[0].connection_completed
-        allow( connection_handlers[0] ).to receive( :send_request )
-
-        session.send_request :the_request
-
-        expect( connection_handlers[0] ).
-          to have_received( :send_request ).
-          with( :the_request )
+        result
       end
 
       describe '#send_request' do
-        let( :connected_listener ) {
-          cl = double( :connected_listener )
-          allow( cl ).to receive( :call ) do |session|
-            @session = session
-          end
-          cl
+        let!( :session ) {
+          new_session
         }
 
-        attr_reader :session
+        it "sends request to POSLynx" do
+          allow( connection_handlers[0] ).to receive( :send_request )
 
-        before do
-          subject.start_session connected: connected_listener
+          session.send_request :the_request
+
+          expect( connection_handlers[0] ).
+            to have_received( :send_request ).
+            with( :the_request )
         end
 
         it "calls back to response listener when response received" do
-          connection_handlers[0].connection_completed
           allow( connection_handlers[0] ).to receive( :send_request )
           response = nil
           session.send_request :the_request, responded: ->(resp){
@@ -168,7 +161,6 @@ module ClientForPoslynx
         end
 
         it "transparently reconnects following connection close during session" do
-          connection_handlers[0].connection_completed
           connection_handlers[0].unbind
           response = nil
           session.send_request :the_request, responded: ->(resp){
@@ -184,7 +176,6 @@ module ClientForPoslynx
         end
 
         it "reports failure and closes session when re-opening connection fails" do
-          connection_handlers[0].connection_completed
           connection_handlers[0].unbind
           response = nil
           failed_listener = double( :failed_listener, call: nil )
@@ -198,7 +189,6 @@ module ClientForPoslynx
         end
 
         it "reports failure and closes session when connection closed before response returned" do
-          connection_handlers[0].connection_completed
           failed_listener = double( :failed_listener, call: nil )
           allow( connection_handlers[0] ).to receive( :send_request )
           session.send_request :the_request, failed: failed_listener
