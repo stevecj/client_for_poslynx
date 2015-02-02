@@ -194,6 +194,13 @@ module ClientForPoslynx
           expect( failed_listener ).to have_received :call
           expect( session ).to be_closed
         end
+
+        it "reports failure when session is finished" do
+          session.finish
+          failed_listener = double( :failed_listener, call: nil )
+          session.send_request :the_request, failed: failed_listener
+          expect( failed_listener ).to have_received :call
+        end
       end
 
       context "concurrency" do
@@ -210,6 +217,25 @@ module ClientForPoslynx
           session.send_request :the_request
           expect( other_session ).to     be_finished
           expect( session       ).not_to be_finished
+        end
+
+        it "usurps pending reset request from other session and supplants it" do
+          allow( connection_handlers[0] ).to receive( :send_request ).once
+          failure_listener_other = double( :failed_other )
+          response_listener = double( :response_listener )
+          other_session.send_request(
+            Data::Requests::PinPadReset.new,
+            responded: double( :responded_other ),
+            failed: failure_listener_other,
+          )
+          session.send_request(
+            Data::Requests::PinPadReset.new,
+            responded: response_listener,
+            failed: double( :failed ),
+          )
+          expect( failure_listener_other ).to receive( call )
+          expect( response_listener      ).to receive( call )
+          connection_handlers[1].receive_response Data::Responses::PinPadReset.new
         end
       end
 

@@ -14,6 +14,7 @@ module ClientForPoslynx
           @session_pool = session_pool
           @connection_accessor = connection_accessor
           @state = :prepared
+          yield method(:connect)
         end
 
         def to_em_session
@@ -21,6 +22,10 @@ module ClientForPoslynx
         end
 
         def send_request(request_data, opts={})
+          if finished?
+            opts[:failed].call if opts[:failed]
+            return
+          end
           set_pending_request request_data, opts
           other_sessions.each do |os| ; os.finish ; end
           connection_accessor.send_request(
@@ -52,23 +57,6 @@ module ClientForPoslynx
           state == :finished
         end
 
-        def connect(opts={})
-          connection_accessor.get_connection(
-            connected: result_listener_for(
-              ->(){
-                self.state = :connected
-                opts[:connected].call if opts[:connected]
-              }
-            ),
-            failed_connection: result_listener_for(
-              ->(){
-                self.state = :closed
-                opts[:failed_connection].call if opts[:failed_connection]
-              }
-            )
-          )
-        end
-
         def idle?
           !!pending_request
         end
@@ -77,6 +65,23 @@ module ClientForPoslynx
 
         attr_reader :session_pool, :connection_accessor, :pending_request
         attr_accessor :state
+
+        def connect(opts={})
+          connection_accessor.get_connection(
+            connected: result_listener_for(
+              ->(){
+                self.state = :connected
+                opts[:connected].call(self) if opts[:connected]
+              }
+            ),
+            failed_connection: result_listener_for(
+              ->(){
+                self.state = :closed
+                opts[:failed_connection].call(self) if opts[:failed_connection]
+              }
+            )
+          )
+        end
 
         def result_listener_for(listener)
           ->(conn_handler, *args) {

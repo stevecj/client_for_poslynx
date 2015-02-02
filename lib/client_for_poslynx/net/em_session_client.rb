@@ -27,9 +27,12 @@ module ClientForPoslynx
       end
 
       def start_session(opts = {})
-        session = EM_SessionClient::Session.new( session_pool, connection_accessor )
+        session_connect_proc = nil
+        session = EM_SessionClient::Session.new(
+          session_pool, connection_accessor
+        ) { |scp| session_connect_proc = scp }
         session_pool << session
-        session.connect(
+        session_connect_proc.call(
           connected:         session_init_listener_for( opts[:connected],         session ),
           failed_connection: session_init_listener_for( opts[:failed_connection], session ),
         )
