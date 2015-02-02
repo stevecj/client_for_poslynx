@@ -136,9 +136,7 @@ module ClientForPoslynx
       end
 
       describe '#send_request' do
-        let!( :session ) {
-          new_session
-        }
+        let!( :session ) { new_session }
 
         it "sends request to POSLynx" do
           allow( connection_handlers[0] ).to receive( :send_request )
@@ -195,6 +193,23 @@ module ClientForPoslynx
           connection_handlers[0].unbind
           expect( failed_listener ).to have_received :call
           expect( session ).to be_closed
+        end
+      end
+
+      context "concurrency" do
+        let!( :other_session ) { new_session }
+        let( :session ) { new_session }
+
+        it "can coexist with another idle session" do
+          expect( session       ).not_to be_finished
+          expect( other_session ).not_to be_finished
+        end
+
+        it "supplants another idle session when sending a request" do
+          allow( connection_handlers[0] ).to receive( :send_request )
+          session.send_request :the_request
+          expect( other_session ).to     be_finished
+          expect( session       ).not_to be_finished
         end
       end
 

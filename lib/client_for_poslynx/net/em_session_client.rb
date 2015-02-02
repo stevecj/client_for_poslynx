@@ -27,7 +27,7 @@ module ClientForPoslynx
       end
 
       def start_session(opts = {})
-        session = EM_SessionClient::Session.new( connection_accessor )
+        session = EM_SessionClient::Session.new( session_pool, connection_accessor )
         session_pool << session
         session.connect(
           connected:         session_init_listener_for( opts[:connected],         session ),

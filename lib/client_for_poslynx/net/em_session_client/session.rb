@@ -10,7 +10,8 @@ module ClientForPoslynx
         attr_accessor :connection_handler
         private       :connection_handler=
 
-        def initialize(connection_accessor)
+        def initialize(session_pool, connection_accessor)
+          @session_pool = session_pool
           @connection_accessor = connection_accessor
           @state = :prepared
         end
@@ -20,6 +21,8 @@ module ClientForPoslynx
         end
 
         def send_request(request_data, opts={})
+          set_pending_request request_data, opts
+          other_sessions.each do |os| ; os.finish ; end
           connection_accessor.send_request(
             request_data,
             responded: result_listener_for(
@@ -41,6 +44,14 @@ module ClientForPoslynx
           state == :closed
         end
 
+        def finish
+          self.state = :finished
+        end
+
+        def finished?
+          state == :finished
+        end
+
         def connect(opts={})
           connection_accessor.get_connection(
             connected: result_listener_for(
@@ -58,9 +69,13 @@ module ClientForPoslynx
           )
         end
 
+        def idle?
+          !!pending_request
+        end
+
         private
 
-        attr_reader :connection_accessor
+        attr_reader :session_pool, :connection_accessor, :pending_request
         attr_accessor :state
 
         def result_listener_for(listener)
@@ -68,6 +83,22 @@ module ClientForPoslynx
             self.connection_handler = conn_handler
             listener.call *args if listener
           }
+        end
+
+        def other_idle_sessions
+          other_sessions.select { |os| os.idle? }
+        end
+
+        def other_sessions
+          session_pool.reject { |ps| ps == self }
+        end
+
+        def set_pending_request(request_data, opts)
+          @pending_request = {request_data: request_data}.merge( opts )
+        end
+
+        def clear_pending_request
+          @pending_request = nil
         end
       end
 
