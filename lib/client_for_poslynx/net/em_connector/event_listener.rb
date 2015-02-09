@@ -12,12 +12,15 @@ module ClientForPoslynx
         end
 
         attr_writer :callback_adapter
+        attr_accessor :current_handler
+        private       :current_handler=
 
         def to_em_connector_callback_adapter
           self
         end
 
         def connection_completed(handler)
+          self.current_handler = handler
           callback_adapter.connection_completed(handler)
         end
 

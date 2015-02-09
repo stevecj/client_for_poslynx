@@ -27,12 +27,20 @@ module ClientForPoslynx
       end
 
       def connect(callback = ->(handler) { } )
-        event_listener.callback_adapter = ConnectCallbackAdapter.new( callback )
-        em_system.connect(
-          host, port,
-          connection_class,
-          event_listener
-        )
+        if current_handler
+          callback.call current_handler, true
+        else
+          event_listener.callback_adapter = ConnectCallbackAdapter.new( callback )
+          em_system.connect(
+            host, port,
+            connection_class,
+            event_listener
+          )
+        end
+      end
+
+      def current_handler
+        event_listener.current_handler
       end
 
       class ConnectCallbackAdapter
@@ -50,8 +58,6 @@ module ClientForPoslynx
           callback.call handler, false
         end
       end
-
-      private
 
       def event_listener
         @event_listener ||= EM_Connector::EventListener.new
