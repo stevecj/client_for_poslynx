@@ -60,6 +60,21 @@ module ClientForPoslynx
         connection_handler = connection_class.new(*conn_handler_init_args)
         connection_handler.connection_completed
       end
+
+      it "Reports connection handler and failure for a failed connection" do
+        allow( em_system ).to receive( :connect ) { |*args| em_connect_args.replace args }
+
+        subject.connect callback
+
+        expect( callback ).to receive( :call ) do |handler, success|
+          expect( handler ).to be_kind_of( subject.connection_class )
+          expect( success ).to eq( false )
+        end
+
+        host, port, connection_class, *conn_handler_init_args = em_connect_args
+        connection_handler = connection_class.new(*conn_handler_init_args)
+        connection_handler.unbind
+      end
     end
   end
 

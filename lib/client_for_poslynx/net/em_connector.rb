@@ -45,6 +45,10 @@ module ClientForPoslynx
         def connection_completed(handler)
           callback.call handler, true
         end
+
+        def unbind(handler)
+          callback.call handler, false
+        end
       end
 
       private

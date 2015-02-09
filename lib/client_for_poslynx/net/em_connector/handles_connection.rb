@@ -14,6 +14,10 @@ module ClientForPoslynx
         def connection_completed
           event_listener.connection_completed self
         end
+
+        def unbind
+          event_listener.unbind self
+        end
       end
 
     end

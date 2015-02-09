@@ -8,6 +8,7 @@ module ClientForPoslynx
         module NullCallbackAdapter
           extend self
           def connection_completed(handler) ; end
+          def unbind(handler)               ; end
         end
 
         attr_writer :callback_adapter
@@ -18,6 +19,10 @@ module ClientForPoslynx
 
         def connection_completed(handler)
           callback_adapter.connection_completed(handler)
+        end
+
+        def unbind(handler)
+          callback_adapter.unbind(handler)
         end
 
         private
