@@ -57,25 +57,19 @@ module ClientForPoslynx
           subject.connect callback
 
           expect( callback ).to receive( :call ) do |handler, success|
-            expect( handler ).to be_kind_of( subject.connection_class )
-            expect( success ).to eq( expect_success )
+            expect( handler ).to eq( @connection_handler )
+            @success = success
           end
         end
 
-        context "when connects successfully" do
-          let( :expect_success ) { true }
-
-          it "calls back with connection handler and success" do
-            @connection_handler.connection_completed
-          end
+        it "calls back with connection handler and success on successful connection" do
+          @connection_handler.connection_completed
+          expect( @success ).to eq( true )
         end
 
-        context "when fails to connect" do
-          let( :expect_success ) { false }
-
-          it "calls back with connection handler and failure" do
-            @connection_handler.unbind
-          end
+        it "calls back with connection handler and failure on connection failure" do
+          @connection_handler.unbind
+          expect( @success ).to eq( false )
         end
       end
     end
