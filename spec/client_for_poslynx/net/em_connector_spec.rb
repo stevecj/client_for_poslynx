@@ -7,7 +7,7 @@ module ClientForPoslynx
 
   describe Net::EM_Connector do
 
-    describe "default initialization not using SSL" do
+    describe "with default dependencies" do
       subject{ described_class.new(:the_host, :the_port) }
 
       it "uses EM as the event-manager system" do
@@ -95,8 +95,38 @@ module ClientForPoslynx
         end
 
         context "with a previously closed connection" do
-          it "calls back with new connection handler and success on successful connection"
-          it "calls back with new connection handler and failure on connection failure"
+          let( :connection_handler_1 ) { 
+            subject.connection_class.new( subject.event_listener )
+          }
+
+          before do
+            subject.event_listener.connection_completed connection_handler_1
+            subject.event_listener.unbind               connection_handler_1
+
+            allow( em_system ).to receive( :connect ) { |*args|
+              host, port, connection_class, *init_args = args
+              @new_connection_handler = connection_class.new( *init_args )
+            }
+
+            subject.connect callback
+
+            expect( callback ).to receive( :call ) do |handler, success|
+              @received_connection_handler = handler
+              @success = success
+            end
+          end
+
+          it "calls back with new connection handler and success on successful connection" do
+            @new_connection_handler.connection_completed
+            expect( @received_connection_handler ).to eq( @new_connection_handler )
+            expect( @success ).to eq( true )
+          end
+
+          it "calls back with new connection handler and failure on connection failure" do
+            @new_connection_handler.unbind
+            expect( @received_connection_handler ).to eq( @new_connection_handler )
+            expect( @success ).to eq( false )
+          end
         end
       end
     end

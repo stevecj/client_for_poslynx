@@ -27,7 +27,7 @@ module ClientForPoslynx
       end
 
       def connect(callback = ->(handler) { } )
-        if current_handler
+        if current_handler && ! unbound?
           callback.call current_handler, true
         else
           event_listener.callback_adapter = ConnectCallbackAdapter.new( callback )
@@ -41,6 +41,10 @@ module ClientForPoslynx
 
       def current_handler
         event_listener.current_handler
+      end
+
+      def unbound?
+        event_listener.unbound?
       end
 
       class ConnectCallbackAdapter
