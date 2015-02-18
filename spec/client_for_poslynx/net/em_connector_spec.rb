@@ -20,35 +20,39 @@ module ClientForPoslynx
     end
 
     describe '#connect' do
-      subject{ described_class.new(
-        :the_host, :the_port,
-        em_system: em_system,
-        em_connection_base_class: em_connection_base_class,
-      ) }
-
       let( :em_system ) { double( :em_system ) }
       let( :em_connection_base_class ) { Class.new do ; end }
 
-      it "initiates a connection" do
-        allow( em_system ).to receive( :connect )
+      context "with SSL" do
+        subject{ described_class.new(
+          :the_host, :the_port,
+          use_ssl: true,
+          em_system: em_system,
+          em_connection_base_class: em_connection_base_class,
+        ) }
 
-        subject.connect
+        it "initiates a secure connection" do
+          expect( em_system ).to receive( :connect ) { |*args|
+            expect( args.length ).to eq( 4 )
+            host, port, handler, listener = args
 
-        expect( em_system ).to have_received( :connect ) { |*args|
-          expect( args.length ).to eq( 4 )
-          host, port, handler, listener = args
+            expect( host ).to eq( :the_host )
+            expect( port ).to eq( :the_port )
+            expect( handler ).to eq( subject.connection_class )
+            expect( listener ).to respond_to( :to_em_connector_callback_adapter )
+            @connection_handler = handler.new( listener )
+          }
 
-          expect( host ).to eq( :the_host )
-          expect( port ).to eq( :the_port )
-          expect( handler ).to eq( subject.connection_class )
-          expect( listener ).to respond_to( :to_em_connector_callback_adapter )
-        }
-      end
+          subject.connect
 
-      context "with response" do
-        let( :callback ) { double( :callback ) }
+          expect( @connection_handler ).to receive( :start_tls ).with( verify_peer: false )
 
-        context "on initial connection attempt" do
+          @connection_handler.connection_completed
+        end
+
+        context "with response" do
+          let( :callback ) { double( :callback ) }
+
           before do
             allow( em_system ).to receive( :connect ) { |*args|
               host, port, connection_class, *init_args = args
@@ -63,69 +67,140 @@ module ClientForPoslynx
             end
           end
 
-          it "calls back with connection handler and success on successful connection" do
-            @connection_handler.connection_completed
-            expect( @success ).to eq( true )
-          end
-
-          it "calls back with connection handler and failure on connection failure" do
-            @connection_handler.unbind
-            expect( @success ).to eq( false )
-          end
-        end
-
-        context "with an existing connection" do
-          let( :connection_handler ) { 
-            subject.connection_class.new( subject.event_listener )
-          }
-
-          before do
-            subject.event_listener.connection_completed connection_handler
-          end
-
-          it "calls back with existing connection handler and success" do
-            expect( callback ).to receive( :call ) do |handler, success|
-              expect( handler ).to eq( connection_handler )
-              @success = success
+          context "on successful http connection" do
+            before do
+              allow( @connection_handler ).to receive( :start_tls )
+              @connection_handler.connection_completed
             end
 
-            subject.connect callback
+            it "calls back with connection handler and success on successful ssl start" do
+              @connection_handler.ssl_handshake_completed
+              expect( @success ).to eq( true )
+            end
+
+            it "calls back with connection handler and failure on ssl failure" do
+              @connection_handler.unbind
+              expect( @success ).to eq( false )
+            end
           end
 
+          context "on http connection failure" do
+            before do ; @connection_handler.unbind ; end
+
+            it "calls back with connection handler and failure" do
+              expect( @success ).to eq( false )
+            end
+          end
         end
 
-        context "with a previously closed connection" do
-          let( :connection_handler_1 ) { 
-            subject.connection_class.new( subject.event_listener )
+      end
+
+      context "without SSL" do
+        subject{ described_class.new(
+          :the_host, :the_port,
+          use_ssl: false,
+          em_system: em_system,
+          em_connection_base_class: em_connection_base_class,
+        ) }
+
+        it "initiates a connection" do
+          allow( em_system ).to receive( :connect )
+
+          subject.connect
+
+          expect( em_system ).to have_received( :connect ) { |*args|
+            expect( args.length ).to eq( 4 )
+            host, port, handler, listener = args
+
+            expect( host ).to eq( :the_host )
+            expect( port ).to eq( :the_port )
+            expect( handler ).to eq( subject.connection_class )
+            expect( listener ).to respond_to( :to_em_connector_callback_adapter )
           }
+        end
 
-          before do
-            subject.event_listener.connection_completed connection_handler_1
-            subject.event_listener.unbind               connection_handler_1
+        context "with response" do
+          let( :callback ) { double( :callback ) }
 
-            allow( em_system ).to receive( :connect ) { |*args|
-              host, port, connection_class, *init_args = args
-              @new_connection_handler = connection_class.new( *init_args )
+          context "on initial connection attempt" do
+            before do
+              allow( em_system ).to receive( :connect ) { |*args|
+                host, port, connection_class, *init_args = args
+                @connection_handler = connection_class.new( *init_args )
+              }
+
+              subject.connect callback
+
+              expect( callback ).to receive( :call ) do |handler, success|
+                expect( handler ).to eq( @connection_handler )
+                @success = success
+              end
+            end
+
+            it "calls back with connection handler and success on successful connection" do
+              @connection_handler.connection_completed
+              expect( @success ).to eq( true )
+            end
+
+            it "calls back with connection handler and failure on connection failure" do
+              @connection_handler.unbind
+              expect( @success ).to eq( false )
+            end
+          end
+
+          context "with an existing connection" do
+            let( :connection_handler ) { 
+              subject.connection_class.new( subject.event_listener )
             }
 
-            subject.connect callback
-
-            expect( callback ).to receive( :call ) do |handler, success|
-              @received_connection_handler = handler
-              @success = success
+            before do
+              subject.event_listener.connection_completed connection_handler
             end
+
+            it "calls back with existing connection handler and success" do
+              expect( callback ).to receive( :call ) do |handler, success|
+                expect( handler ).to eq( connection_handler )
+                @success = success
+              end
+
+              subject.connect callback
+            end
+
           end
 
-          it "calls back with new connection handler and success on successful connection" do
-            @new_connection_handler.connection_completed
-            expect( @received_connection_handler ).to eq( @new_connection_handler )
-            expect( @success ).to eq( true )
-          end
+          context "with a previously closed connection" do
+            let( :connection_handler_1 ) {
+              subject.connection_class.new( subject.event_listener )
+            }
 
-          it "calls back with new connection handler and failure on connection failure" do
-            @new_connection_handler.unbind
-            expect( @received_connection_handler ).to eq( @new_connection_handler )
-            expect( @success ).to eq( false )
+            before do
+              subject.event_listener.connection_completed connection_handler_1
+              subject.event_listener.unbind               connection_handler_1
+
+              allow( em_system ).to receive( :connect ) { |*args|
+                host, port, connection_class, *init_args = args
+                @new_connection_handler = connection_class.new( *init_args )
+              }
+
+              subject.connect callback
+
+              expect( callback ).to receive( :call ) do |handler, success|
+                @received_connection_handler = handler
+                @success = success
+              end
+            end
+
+            it "calls back with new connection handler and success on successful connection" do
+              @new_connection_handler.connection_completed
+              expect( @received_connection_handler ).to eq( @new_connection_handler )
+              expect( @success ).to eq( true )
+            end
+
+            it "calls back with new connection handler and failure on connection failure" do
+              @new_connection_handler.unbind
+              expect( @received_connection_handler ).to eq( @new_connection_handler )
+              expect( @success ).to eq( false )
+            end
           end
         end
       end

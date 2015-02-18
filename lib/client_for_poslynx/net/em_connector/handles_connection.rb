@@ -9,9 +9,18 @@ module ClientForPoslynx
 
         def initialize(event_listener)
           @event_listener = event_listener
+          @use_ssl = use_ssl
         end
 
         def connection_completed
+          if use_ssl
+            start_tls verify_peer: false
+          else
+            event_listener.connection_completed self
+          end
+        end
+
+        def ssl_handshake_completed
           event_listener.connection_completed self
         end
 
