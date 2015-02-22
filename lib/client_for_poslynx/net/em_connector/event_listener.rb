@@ -30,7 +30,11 @@ module ClientForPoslynx
         def unbind(handler)
           @current_handler = handler
           @unbound = true
-          callback_adapter.unbind(handler)
+          callback_adapter.unbind handler
+        end
+
+        def receive_response(response_data)
+          callback_adapter.receive_response response_data
         end
 
         private

@@ -119,7 +119,7 @@ module ClientForPoslynx
           }
         end
 
-        context "with response" do
+        context "with result" do
           let( :callback ) { double( :callback ) }
 
           context "on initial connection attempt" do
@@ -150,11 +150,11 @@ module ClientForPoslynx
 
           context "with an existing connection" do
             let( :connection_handler ) { 
-              subject.connection_class.new( subject.event_listener )
+              subject.connection_class.new( subject._event_listener )
             }
 
             before do
-              subject.event_listener.connection_completed connection_handler
+              subject._event_listener.connection_completed connection_handler
             end
 
             it "calls back with existing connection handler and success" do
@@ -170,12 +170,12 @@ module ClientForPoslynx
 
           context "with a previously closed connection" do
             let( :connection_handler_1 ) {
-              subject.connection_class.new( subject.event_listener )
+              subject.connection_class.new( subject._event_listener )
             }
 
             before do
-              subject.event_listener.connection_completed connection_handler_1
-              subject.event_listener.unbind               connection_handler_1
+              subject._event_listener.connection_completed connection_handler_1
+              subject._event_listener.unbind               connection_handler_1
 
               allow( em_system ).to receive( :connect ) { |*args|
                 host, port, connection_class, *init_args = args
@@ -205,6 +205,49 @@ module ClientForPoslynx
         end
       end
     end
+
+    describe '#send_request' do
+      context "with a current connection" do
+        subject{ described_class.new(
+          :the_host, :the_port,
+          use_ssl: false,
+          em_system: em_system,
+          em_connection_base_class: em_connection_base_class,
+        ) }
+
+        let( :em_system ) { double( :em_system ) }
+        let( :em_connection_base_class ) { Class.new do ; end }
+
+        before do
+          allow( em_system ).to receive( :connect ) { |*args|
+            host, port, handler, listener = args
+            @connection_handler = handler.new( listener )
+          }
+          subject.connect
+          @connection_handler.connection_completed
+        end
+
+        context "and the connection has not been unlinked" do
+          it "sends the given request using the current connection" do
+            expect( @connection_handler ).to receive( :send_request ).with( :the_request )
+            subject.send_request :the_request
+          end
+
+          context "with result" do
+            let( :callback ) { double( :callback ) }
+
+            it "calls back with the response" do
+              allow( @connection_handler ).to receive( :send_request ).with( :the_request )
+              subject.send_request :the_request, callback
+
+              expect( callback ).to receive( :call ).with( :the_response )
+              @connection_handler.receive_response :the_response
+            end
+          end
+        end
+      end
+    end
+
   end
 
 end

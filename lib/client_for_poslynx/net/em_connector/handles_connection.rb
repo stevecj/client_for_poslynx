@@ -5,6 +5,8 @@ module ClientForPoslynx
     class EM_Connector
 
       module HandlesConnection
+        include EM::Protocols::POSLynx
+
         attr_reader :event_listener
 
         def initialize(event_listener)
@@ -26,6 +28,10 @@ module ClientForPoslynx
 
         def unbind
           event_listener.unbind self
+        end
+
+        def receive_response(response_data)
+          event_listener.receive_response response_data
         end
       end
 

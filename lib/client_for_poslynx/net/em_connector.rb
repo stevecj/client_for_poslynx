@@ -2,6 +2,7 @@
 
 require_relative 'em_connector/handles_connection'
 require_relative 'em_connector/event_listener'
+require_relative 'em_connector/callback_adapters'
 
 module ClientForPoslynx
   module Net
@@ -10,11 +11,13 @@ module ClientForPoslynx
     # making requests to the POSLynx using the POSLynx
     # EventManager protocol and receiving call-backs with
     # the results of those requests.
+    #
     # Unlike a raw EventManager connection handler instance, a
     # single EM_Connection instance can be re-connected and
     # re-used after a connection has been closed.
     class EM_Connector
-      NullCallback = ->(handler, success) { }
+      NullConnectCallback     = ->(handler, success) { }
+      NullSendRequestCallback = ->(response)         { }
 
       attr_reader :host, :port, :em_system, :connection_class
 
@@ -31,44 +34,68 @@ module ClientForPoslynx
         end
       end
 
-      def connect(callback = NullCallback )
-        if current_handler && ! unbound?
+      # Attempts to open a new connection if not currently
+      # connected or utilize the current connection if currently
+      # connected.
+      #
+      # causes the #call(handler, success) method to be called
+      # for the given handler.  The connection handler argument
+      # receives the connection handler used to make (or attempt
+      # to make) the connection, and the success argument
+      # receives `true` for a successful or existing connection,
+      # `false` for an unsuccessful connection.
+      #
+      # Following an unsuccessful connection, #connect may be
+      # re-tried, and it will start again with a new connection
+      # handler in that case.
+      #
+      # Note that the #call method of the callback may be invoked
+      # either synchronously or asynchronously.
+      def connect(callback = NullConnectCallback)
+        if currently_connected?
           callback.call current_handler, true
         else
-          event_listener.callback_adapter = ConnectCallbackAdapter.new( callback )
+          _event_listener.callback_adapter = CallbackAdapters::Connect.new( callback )
           em_system.connect(
             host, port,
             connection_class,
-            event_listener,
+            _event_listener,
           )
         end
       end
 
+      # Given a request data object (see
+      # ClientForPoslynx::Data:Requests) sends the request to
+      # the POSLynx using the currently open connection.
+      #
+      # The #call(response_data) method of the given callback
+      # object will be invoked with a response data object (see
+      # ClientForPoslynx::Data:Responses) containing the response
+      # received from the POSLynx.
+      def send_request(request_data, callback = NullSendRequestCallback)
+        _event_listener.callback_adapter = CallbackAdapters::SendRequest.new( callback )
+        current_handler.send_request request_data
+      end
+
+      # The current or most recent connection handler.
       def current_handler
-        event_listener.current_handler
+        _event_listener.current_handler
       end
 
+      # True if a connection has been successfully made and has
+      # not been subsequently unbound.
+      def currently_connected?
+        current_handler && ! unbound?
+      end
+
+      # True if the most recent connection attempt failed or the
+      # most recent successful connectino has been subsequently
+      # unbound.
       def unbound?
-        event_listener.unbound?
+        _event_listener.unbound?
       end
 
-      class ConnectCallbackAdapter
-        attr_reader :callback
-
-        def initialize(callback)
-          @callback = callback
-        end
-
-        def connection_completed(handler)
-          callback.call handler, true
-        end
-
-        def unbind(handler)
-          callback.call handler, false
-        end
-      end
-
-      def event_listener
+      def _event_listener
         @event_listener ||= EM_Connector::EventListener.new
       end
     end
