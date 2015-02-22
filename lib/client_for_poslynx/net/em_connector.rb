@@ -9,8 +9,8 @@ module ClientForPoslynx
 
     # An instance of EM_Connector provides a simple API for
     # making requests to the POSLynx using the POSLynx
-    # EventManager protocol and receiving call-backs with
-    # the results of those requests.
+    # EventManager protocol and receiving callbacks with the
+    # results of those requests.
     #
     # Unlike a raw EventManager connection handler instance, a
     # single EM_Connection instance can be re-connected and
@@ -22,17 +22,43 @@ module ClientForPoslynx
 
       attr_reader :host, :port, :em_system, :connection_class
 
+      # Creates an instance of EM_Connector
+      # 
+      # host : The name or IP address of the host to connect to
+      # port : The IP port number on which to connect
+      # opts :
+      #   :use_ssl : true if connection should be secured using
+      #              SSL. false if connections should not be
+      #              secured
+      #   :em_connection :
+      #     :include_module : A module to be included into the
+      #                       connection handler class to allow
+      #                       for customizing behavior. Note that
+      #                       if you implement any of the methods
+      #                       defined in
+      #                       EM_Connector::HandlesConnection,
+      #                       then you should call super from
+      #                       within those methods
+      #     :base_class     : For testing purposes, allows
+      #                       providing a connection handler
+      #                       base class other than EM::Connection
+      #   :em_system : For testing purposes, allows providing a
+      #                substutute for EM::System for use within
+      #                the EM_Connector instance.
       def initialize(host, port, opts={})
         @host = host
         @port = port
         use_ssl = opts.fetch( :use_ssl, false )
-        @em_system = opts.fetch( :em_system, EM )
+        em_connection_opts = opts.fetch( :em_connection, {} )
         em_conn_base_class =
-          opts.fetch( :em_connection_base_class, EM::Connection )
+          em_connection_opts.fetch( :base_class, EM::Connection )
+        em_conn_include_module = em_connection_opts[ :include_module ]
         @connection_class = Class.new( em_conn_base_class ) do
           include EM_Connector::HandlesConnection
+          include em_conn_include_module if em_conn_include_module
           define_method :use_ssl do ; use_ssl ; end
         end
+        @em_system = opts.fetch( :em_system, EM )
       end
 
       # Attempts to open a new connection if not currently

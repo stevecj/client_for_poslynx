@@ -33,7 +33,7 @@ module ClientForPoslynx
         :the_host, :the_port,
         use_ssl: use_ssl,
         em_system: em_system,
-        em_connection_base_class: em_connection_base_class,
+        em_connection: { base_class: em_connection_base_class },
       ) }
 
       let( :em_system ) { double( :em_system ) }
