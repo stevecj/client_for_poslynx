@@ -16,8 +16,9 @@ module ClientForPoslynx
     # single EM_Connection instance can be re-connected and
     # re-used after a connection has been closed.
     class EM_Connector
-      NullConnectCallback     = ->(handler, success) { }
-      NullSendRequestCallback = ->(response)         { }
+      NullConnectCallback         = ->(handler, success)                 { }
+      NullSendRequestCallback     = ->(response_data, connection_status) { }
+      NullCloseConnectionCallback = ->()                                 { }
 
       attr_reader :host, :port, :em_system, :connection_class
 
@@ -77,12 +78,32 @@ module ClientForPoslynx
       # response was successfully received or false if there is
       # no currently linked connection or if the connection is
       # lost before a result is received.
+      #
+      # Note that the #call method of the callback may be invoked
+      # either synchronously or asynchronously.
       def send_request(request_data, callback = NullSendRequestCallback)
         if currently_connected?
           _event_listener.callback_adapter = CallbackAdapters::SendRequest.new( callback )
           current_handler.send_request request_data
         else
           callback.call nil, false
+        end
+      end
+
+      # Closes the current connection if currently connected.
+      #
+      # causes the #call method to be called for the given
+      # handler after the current connection has been closed or
+      # immediately if not currently connected.
+      #
+      # Note that the #call method of the callback may be invoked
+      # either synchronously or asynchronously.
+      def close_connection(callback = NullCloseConnectionCallback, *args)
+        if currently_connected?
+          _event_listener.callback_adapter = CallbackAdapters::CloseConnection.new( callback )
+          current_handler.close_connection *args
+        else
+          callback.call
         end
       end
 
