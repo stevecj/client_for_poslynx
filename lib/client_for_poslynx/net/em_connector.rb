@@ -77,10 +77,6 @@ module ClientForPoslynx
       # response was successfully received or false if there is
       # no currently linked connection or if the connection is
       # lost before a result is received.
-      #
-      # #TODO: Properly respond to the case in which the
-      #        connection is lost while waiting for a response as
-      #        described above.
       def send_request(request_data, callback = NullSendRequestCallback)
         if currently_connected?
           _event_listener.callback_adapter = CallbackAdapters::SendRequest.new( callback )

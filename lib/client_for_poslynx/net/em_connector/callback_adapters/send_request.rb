@@ -6,6 +6,10 @@ module ClientForPoslynx
       module CallbackAdapters
 
         class SendRequest < CallbackAdapters::Base
+          def unbind(handler)
+            callback.call nil, false
+          end
+
           def receive_response(response_data)
             callback.call response_data, true
           end

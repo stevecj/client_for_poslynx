@@ -240,7 +240,7 @@ module ClientForPoslynx
           @connection_handler.connection_completed
         end
 
-        context "and the connection has not already been lost" do
+        context "and the connection has not already been nd does not get lost" do
           it "sends the given request using the current connection" do
             expect( @connection_handler ).to receive( :send_request ).with( :the_request )
             subject.send_request :the_request
@@ -267,6 +267,16 @@ module ClientForPoslynx
               expect( callback ).to receive( :call ).with( nil, false )
               subject.send_request :the_request, callback
             end
+          end
+        end
+
+        context "and the connection is lost without first receiving a response" do
+          it "calls back with a nil response and a false connected status" do
+            allow( @connection_handler ).to receive( :send_request ).with( :the_request )
+            subject.send_request :the_request, callback
+
+            expect( callback ).to receive( :call ).with( nil, false )
+            @connection_handler.unbind
           end
         end
       end
