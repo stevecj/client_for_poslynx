@@ -8,7 +8,7 @@ module ClientForPoslynx
   class ExampleRequestFactory
     attr_reader :client_mac
 
-    # Initializes a ne factory instance, optionally with a
+    # Initializes a new factory instance, optionally with a
     # client_mac value to be assigned to each request-data object
     # that the factory builds.
     def initialize(client_mac = nil)

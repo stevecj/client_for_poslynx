@@ -45,9 +45,9 @@ module ClientForPoslynx
       # receives `true` for a successful or existing connection,
       # `false` for an unsuccessful connection.
       #
-      # Following an unsuccessful connection, #connect may be
-      # re-tried, and it will start again with a new connection
-      # handler in that case.
+      # Following an unsuccessful connection or a disconnection,
+      # #connect may be # re-tried.  A new connection handler
+      # will be instantiated in that case.
       #
       # Note that the #call method of the callback may be invoked
       # either synchronously or asynchronously.
@@ -86,20 +86,22 @@ module ClientForPoslynx
         end
       end
 
-      # The current or most recent connection handler.
+      # The current or most recent connection handler.  Returns
+      # nil if no connection has been made yet.
       def current_handler
         _event_listener.current_handler
       end
 
       # True if a connection has been successfully made and has
-      # not been subsequently unbound.
+      # not been subsequently unbound.  False, otherwise.
       def currently_connected?
         current_handler && ! unbound?
       end
 
       # True if the most recent connection attempt failed or the
-      # most recent successful connectino has been subsequently
-      # unbound.
+      # most recent successful connection has been subsequently
+      # unbound.  False if the no connection has been made yet or
+      # there is a currently-connected current connection.
       def unbound?
         _event_listener.unbound?
       end
