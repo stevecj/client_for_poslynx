@@ -7,7 +7,7 @@ module ClientForPoslynx
 
         class SendRequest < CallbackAdapters::Base
           def receive_response(response_data)
-            callback.call response_data
+            callback.call response_data, true
           end
         end
 

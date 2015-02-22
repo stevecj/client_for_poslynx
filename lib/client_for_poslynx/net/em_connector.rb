@@ -68,13 +68,26 @@ module ClientForPoslynx
       # ClientForPoslynx::Data:Requests) sends the request to
       # the POSLynx using the currently open connection.
       #
-      # The #call(response_data) method of the given callback
-      # object will be invoked with a response data object (see
+      # The #call(response_data, connected_status) method of the
+      # given callback object will be invoked.  response_data
+      # will receive a response data object (see
       # ClientForPoslynx::Data:Responses) containing the response
-      # received from the POSLynx.
+      # received from the POSLynx or nil if no response could be
+      # received.  connected_status will receive true if the
+      # response was successfully received or false if there is
+      # no currently linked connection or if the connection is
+      # lost before a result is received.
+      #
+      # #TODO: Properly respond to the case in which the
+      #        connection is lost while waiting for a response as
+      #        described above.
       def send_request(request_data, callback = NullSendRequestCallback)
-        _event_listener.callback_adapter = CallbackAdapters::SendRequest.new( callback )
-        current_handler.send_request request_data
+        if currently_connected?
+          _event_listener.callback_adapter = CallbackAdapters::SendRequest.new( callback )
+          current_handler.send_request request_data
+        else
+          callback.call nil, false
+        end
       end
 
       # The current or most recent connection handler.

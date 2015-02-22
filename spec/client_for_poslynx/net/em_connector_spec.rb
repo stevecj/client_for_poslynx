@@ -207,41 +207,65 @@ module ClientForPoslynx
     end
 
     describe '#send_request' do
-      context "with a current connection" do
-        subject{ described_class.new(
-          :the_host, :the_port,
-          use_ssl: false,
-          em_system: em_system,
-          em_connection_base_class: em_connection_base_class,
-        ) }
+      subject{ described_class.new(
+        :the_host, :the_port,
+        use_ssl: false,
+        em_system: em_system,
+        em_connection_base_class: em_connection_base_class,
+      ) }
 
-        let( :em_system ) { double( :em_system ) }
-        let( :em_connection_base_class ) { Class.new do ; end }
+      let( :em_system ) { double( :em_system ) }
+      let( :em_connection_base_class ) { Class.new do ; end }
+      let( :callback ) { double( :callback ) }
 
+      before do
+        allow( em_system ).to receive( :connect ) { |*args|
+          host, port, handler, listener = args
+          @connection_handler = handler.new( listener )
+        }
+      end
+
+      context "without a current connection handler" do
+        context "with result" do
+          it "calls back with a nil response and a false connected status" do
+            expect( callback ).to receive( :call ).with( nil, false )
+            subject.send_request :the_request, callback
+          end
+        end
+      end
+
+      context "with a connection handler" do
         before do
-          allow( em_system ).to receive( :connect ) { |*args|
-            host, port, handler, listener = args
-            @connection_handler = handler.new( listener )
-          }
           subject.connect
           @connection_handler.connection_completed
         end
 
-        context "and the connection has not been unlinked" do
+        context "and the connection has not already been lost" do
           it "sends the given request using the current connection" do
             expect( @connection_handler ).to receive( :send_request ).with( :the_request )
             subject.send_request :the_request
           end
 
           context "with result" do
-            let( :callback ) { double( :callback ) }
-
-            it "calls back with the response" do
+            it "calls back with the response and a true connected status" do
               allow( @connection_handler ).to receive( :send_request ).with( :the_request )
               subject.send_request :the_request, callback
 
-              expect( callback ).to receive( :call ).with( :the_response )
+              expect( callback ).to receive( :call ).with( :the_response, true )
               @connection_handler.receive_response :the_response
+            end
+          end
+        end
+
+        context "and the connection has already been lost" do
+          before do
+            @connection_handler.unbind
+          end
+
+          context "with result" do
+            it "calls back with a nil response and a false connected status" do
+              expect( callback ).to receive( :call ).with( nil, false )
+              subject.send_request :the_request, callback
             end
           end
         end
