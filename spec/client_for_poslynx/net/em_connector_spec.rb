@@ -86,6 +86,45 @@ module ClientForPoslynx
 
         end
 
+        context "when previously connected" do
+          before do
+            subject.connect
+            @handler_instance.connection_completed
+          end
+
+          it "reports success when currently connected" do
+            expect( on_success ).to receive( :call )
+            subject.connect on_success: on_success, on_failure: on_failure
+          end
+
+          context "when not currently connected" do
+            before do
+              @handler_instance.unbind
+            end
+
+            it "reconnects" do
+              expect( @handler_instance ).to receive( :reconnect ).with( :the_host, :the_port )
+              subject.connect
+            end
+
+            it "reports success when connected" do
+              allow( @handler_instance ).to receive( :reconnect )
+              subject.connect on_success: on_success, on_failure: on_failure
+
+              expect( on_success ).to receive( :call )
+              @handler_instance.connection_completed
+            end
+
+            it "reports failure when unbound" do
+              allow( @handler_instance ).to receive( :reconnect )
+              subject.connect on_success: on_success, on_failure: on_failure
+
+              expect( on_failure ).to receive( :call )
+              @handler_instance.unbind
+            end
+          end
+        end
+
       end
 
       describe '#disconnect' do

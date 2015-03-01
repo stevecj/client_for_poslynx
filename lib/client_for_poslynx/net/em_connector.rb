@@ -8,7 +8,11 @@ module ClientForPoslynx
   module Net
 
     class EM_Connector
-      attr_reader :host, :port, :em_system, :handler, :connection
+      attr_reader(
+        :host, :port,
+        :em_system, :handler,
+        :connection, :connection_state
+      )
 
       # Creates a new ClientForPoslynx::Net::EM_Connector
       # instance.
@@ -43,14 +47,14 @@ module ClientForPoslynx
       # * <tt>:on_failure</tt> - An object to receive
       #   <tt>#call</tt> when the connection attempt fails.
       def connect(opts={})
-        handler_opts = {
-          host: host, port: port,
-          connection_setter: build_connection_setter( opts ),
-          state_setter: method( :connection_state= ),
-        }
-        em_system.connect \
-          host, port,
-          handler, handler_opts
+        if never_attempted_connection?
+          make_initial_connection opts
+        elsif connection_state == :connected
+          on_success = opts[:on_success]
+          on_success.call if on_success
+        else
+          reconnect opts
+        end
       end
 
       # When called from within an EventManager event-handling
@@ -76,8 +80,21 @@ module ClientForPoslynx
 
       private
 
-      attr_writer :connection
-      attr_accessor :connection_state
+      attr_writer :connection, :connection_state
+
+      def never_attempted_connection?
+        ! connection
+      end
+
+      def make_initial_connection(opts)
+        handler_opts = {
+          connection_setter: build_connection_setter( opts ),
+          state_setter: method( :connection_state= ),
+        }
+        em_system.connect \
+          host, port,
+          handler, handler_opts
+      end
 
       def build_connection_setter(connect_event_dispatch_opts)
        ->(connection) {
@@ -86,6 +103,13 @@ module ClientForPoslynx
             @connection, connect_event_dispatch_opts
           )
         }
+      end
+
+      def reconnect(connect_event_dispatch_opts)
+        connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
+          connection, connect_event_dispatch_opts
+        )
+        connection.reconnect host, port
       end
 
     end
