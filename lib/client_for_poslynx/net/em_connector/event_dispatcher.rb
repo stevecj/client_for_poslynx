@@ -20,6 +20,12 @@ module ClientForPoslynx
               d[:unbind]               = opts[:on_failure] if opts.key?(:on_failure)
             end
           end
+
+          def for_disconnect(connection, opts)
+            new( connection ) do |d|
+              d[:unbind] = opts[:on_completed] if opts.key?(:on_completed)
+            end
+          end
         end
 
         def initialize(connection)

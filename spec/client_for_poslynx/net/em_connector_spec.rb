@@ -88,6 +88,49 @@ module ClientForPoslynx
 
       end
 
+      describe '#disconnect' do
+        let( :on_completed ) { double(:on_completed) }
+
+        it "reports completion when never connected" do
+          expect( on_completed ).to receive( :call )
+          subject.disconnect on_completed: on_completed
+        end
+
+        context "when previously connected" do
+          before do
+            @handler_instance = nil
+            allow( em_system ).to receive( :connect ) do |host, port, handler, *handler_args|
+              @handler_instance = handler.new( *handler_args )
+              nil
+            end
+            subject.connect
+            @handler_instance.connection_completed
+          end
+
+          it "reports completion when not currently connected" do
+            @handler_instance.unbind
+
+            expect( on_completed ).to receive( :call )
+            subject.disconnect on_completed: on_completed
+          end
+
+          context "when currently connected" do
+            it "closes the open connection" do
+              expect( @handler_instance ).to receive( :close_connection )
+              subject.disconnect
+            end
+
+            it "reports completion when done disconnecting" do
+              allow( @handler_instance ).to receive( :close_connection )
+              subject.disconnect on_completed: on_completed
+
+              expect( on_completed ).to receive( :call )
+              @handler_instance.unbind
+            end
+          end
+
+        end
+      end
     end
   end
 

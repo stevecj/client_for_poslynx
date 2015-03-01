@@ -45,13 +45,47 @@ module ClientForPoslynx
       def connect(opts={})
         handler_opts = {
           host: host, port: port,
-          connection_setter: ->(connection){
-            @connection = connection
-            connection.event_dispatcher =
-              EM_Connector::EventDispatcher.for_connect(connection, opts)
-          },
+          connection_setter: build_connection_setter( opts ),
+          state_setter: method( :connection_state= ),
         }
-        em_system.connect host, port, handler, handler_opts
+        em_system.connect \
+          host, port,
+          handler, handler_opts
+      end
+
+      # When called from within an EventManager event-handling
+      # loop, asynchronously attempts to disconnect the current
+      # EventMachine connection to the POSLynx lane.
+      #
+      # If there is no currently open connection, then the call
+      # to <tt>#disconnect</tt> succeeds immediately and
+      # synchronously.
+      #
+      # ==== Options
+      # * <tt>:on_completed<tt> - An object to receive
+      #   <tt>#call</tt> when finished disconnecting.
+      def disconnect(opts={})
+        if connection_state == :connected
+          connection.event_dispatcher =
+            EM_Connector::EventDispatcher.for_disconnect(connection, opts)
+          connection.close_connection
+        else
+          opts[:on_completed].call
+        end
+      end
+
+      private
+
+      attr_writer :connection
+      attr_accessor :connection_state
+
+      def build_connection_setter(connect_event_dispatch_opts)
+       ->(connection) {
+          @connection = connection
+          connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
+            @connection, connect_event_dispatch_opts
+          )
+        }
       end
 
     end
