@@ -15,9 +15,13 @@ module ClientForPoslynx
       it "Has Net::EM_Connector::ConnectionHandler as its connection_handler" do
         expect( subject.handler ).to eq( Net::EM_Connector::ConnectionHandler )
       end
+
+      it "Sets the connection state to :initial" do
+        expect( subject.connection_state ).to eq( :initial )
+      end
     end
 
-    context "actions" do
+    context "actions and events" do
       subject { described_class.new(
         :the_host, :the_port,
         em_system: em_system,
@@ -57,6 +61,11 @@ module ClientForPoslynx
             expect( subject.connection ).to eq( @handler_instance )
           end
 
+          it "sets the connection state to :connecting" do
+            subject.connect
+            expect( subject.connection_state ).to eq( :connecting )
+          end
+
           context "handling results" do
             before do
               subject.connect(
@@ -65,17 +74,41 @@ module ClientForPoslynx
               )
             end
 
-            it "reports success when connected" do
-              expect( on_success ).to receive(:call)
-              @handler_instance.connection_completed
+            context "when connection is completed" do
+              before do
+                allow( on_success ).to receive( :call )
+                allow( on_failure ).to receive( :call )
+                @handler_instance.connection_completed
+              end
+
+              it "reports success and not failure" do
+                expect( on_success ).to     have_received( :call )
+                expect( on_failure ).not_to have_received( :call )
+              end
+
+              it "sets the connection state to :connected" do
+                expect( subject.connection_state ).to eq( :connected )
+              end
             end
 
-            it "reports failure when unbound" do
-              expect( on_failure ).to receive(:call)
-              @handler_instance.unbind
+            context "when the connection attempt fails" do
+              before do
+                allow( on_success ).to receive( :call )
+                allow( on_failure ).to receive( :call )
+                @handler_instance.unbind
+              end
+
+              it "reports failure and not success" do
+                expect( on_failure ).to     have_received(:call)
+                expect( on_success ).not_to have_received(:call)
+              end
+
+              it "sets the connection state to :disconnected" do
+                expect( subject.connection_state ).to eq( :disconnected )
+              end
             end
 
-            it "does not report failure when unbound later after success" do
+            it "does not report failure later when disconnected subsequent to successful connection" do
               allow( on_success ).to receive(:call)
               @handler_instance.connection_completed
 
@@ -127,12 +160,39 @@ module ClientForPoslynx
 
       end
 
+      context "when an open connection is lost or remotely disconnected" do
+        before do
+          @handler_instance = nil
+          allow( em_system ).to receive( :connect ) do |host, port, handler, *handler_args|
+            @handler_instance = handler.new( *handler_args )
+            nil
+          end
+          subject.connect
+          @handler_instance.connection_completed
+          @handler_instance.unbind
+        end
+
+        it "sets the connection state to :disconnected" do
+          expect( subject.connection_state ).to eq( :disconnected )
+        end
+      end
+
       describe '#disconnect' do
         let( :on_completed ) { double(:on_completed) }
 
-        it "reports completion when never connected" do
-          expect( on_completed ).to receive( :call )
-          subject.disconnect on_completed: on_completed
+        context "when has never been connected" do
+          before do
+            allow( on_completed ).to receive( :call )
+            subject.disconnect on_completed: on_completed
+          end
+
+          it "reports completion" do
+            expect( on_completed ).to have_received( :call )
+          end
+
+          it "leaves connection state as :initial" do
+            expect( subject.connection_state ).to eq( :initial )
+          end
         end
 
         context "when previously connected" do
@@ -146,25 +206,50 @@ module ClientForPoslynx
             @handler_instance.connection_completed
           end
 
-          it "reports completion when not currently connected" do
-            @handler_instance.unbind
+          context "when not currently connected" do
+            before do
+              @handler_instance.unbind
+            end
 
-            expect( on_completed ).to receive( :call )
-            subject.disconnect on_completed: on_completed
+            it "reports completion" do
+              expect( on_completed ).to receive( :call )
+              subject.disconnect on_completed: on_completed
+            end
+
+            it "leaves the connection state as :disconnected" do
+              expect( subject.connection_state ).to eq( :disconnected )
+            end
           end
 
           context "when currently connected" do
+            before do
+              allow( @handler_instance ).to receive( :close_connection )
+            end
+
             it "closes the open connection" do
               expect( @handler_instance ).to receive( :close_connection )
               subject.disconnect
             end
 
-            it "reports completion when done disconnecting" do
-              allow( @handler_instance ).to receive( :close_connection )
-              subject.disconnect on_completed: on_completed
+            it "sets the connection state to :disconnecting" do
+              subject.disconnect
+              expect( subject.connection_state ).to eq( :disconnecting )
+            end
 
-              expect( on_completed ).to receive( :call )
-              @handler_instance.unbind
+            context "when done disconnecting" do
+              it "reports completion" do
+                subject.disconnect on_completed: on_completed
+
+                expect( on_completed ).to receive( :call )
+                @handler_instance.unbind
+              end
+
+              it "sets the connection state to :disconnected" do
+                subject.disconnect
+
+                @handler_instance.unbind
+                expect( subject.connection_state ).to eq( :disconnected )
+              end
             end
           end
 

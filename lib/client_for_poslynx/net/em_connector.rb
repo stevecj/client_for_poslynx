@@ -21,6 +21,7 @@ module ClientForPoslynx
         @port = port
         @em_system = opts.fetch( :em_system, ::EM )
         @handler   = opts.fetch( :handler, EM_Connector::ConnectionHandler )
+        self.connection_state = :initial
       end
 
       # When called from within an EventManager event-handling
@@ -47,9 +48,10 @@ module ClientForPoslynx
       # * <tt>:on_failure</tt> - An object to receive
       #   <tt>#call</tt> when the connection attempt fails.
       def connect(opts={})
-        if never_attempted_connection?
+        case connection_state
+        when :initial
           make_initial_connection opts
-        elsif connection_state == :connected
+        when :connected
           on_success = opts[:on_success]
           on_success.call if on_success
         else
@@ -72,6 +74,7 @@ module ClientForPoslynx
         if connection_state == :connected
           connection.event_dispatcher =
             EM_Connector::EventDispatcher.for_disconnect(connection, opts)
+          self.connection_state = :disconnecting
           connection.close_connection
         else
           opts[:on_completed].call
@@ -82,15 +85,12 @@ module ClientForPoslynx
 
       attr_writer :connection, :connection_state
 
-      def never_attempted_connection?
-        ! connection
-      end
-
       def make_initial_connection(opts)
         handler_opts = {
           connection_setter: build_connection_setter( opts ),
           state_setter: method( :connection_state= ),
         }
+        self.connection_state = :connecting
         em_system.connect \
           host, port,
           handler, handler_opts
@@ -106,6 +106,7 @@ module ClientForPoslynx
       end
 
       def reconnect(connect_event_dispatch_opts)
+        self.connection_state = :connecting
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
           connection, connect_event_dispatch_opts
         )
