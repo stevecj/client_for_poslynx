@@ -65,13 +65,21 @@ module ClientForPoslynx
               )
             end
 
-            it "reports success" do
+            it "reports success when connected" do
               expect( on_success ).to receive(:call)
               @handler_instance.connection_completed
             end
 
-            it "reports failure" do
+            it "reports failure when unbound" do
               expect( on_failure ).to receive(:call)
+              @handler_instance.unbind
+            end
+
+            it "does not report failure when unbound later after success" do
+              allow( on_success ).to receive(:call)
+              @handler_instance.connection_completed
+
+              expect( on_failure ).not_to receive(:call)
               @handler_instance.unbind
             end
           end
@@ -79,6 +87,7 @@ module ClientForPoslynx
         end
 
       end
+
     end
   end
 

@@ -2,13 +2,12 @@
 
 require_relative 'em_connector/handles_connection'
 require_relative 'em_connector/connection_handler'
+require_relative 'em_connector/event_dispatcher'
 
 module ClientForPoslynx
   module Net
 
     class EM_Connector
-      NULL_LISTENER = ->() { }
-
       attr_reader :host, :port, :em_system, :handler, :connection
 
       # Creates a new ClientForPoslynx::Net::EM_Connector
@@ -46,9 +45,11 @@ module ClientForPoslynx
       def connect(opts={})
         handler_opts = {
           host: host, port: port,
-          connection_setter: ->(connection){ @connection = connection },
-          on_connect_success: opts.fetch(:on_success, NULL_LISTENER),
-          on_connect_failure: opts.fetch(:on_failure, NULL_LISTENER),
+          connection_setter: ->(connection){
+            @connection = connection
+            connection.event_dispatcher =
+              EM_Connector::EventDispatcher.for_connect(connection, opts)
+          },
         }
         em_system.connect host, port, handler, handler_opts
       end

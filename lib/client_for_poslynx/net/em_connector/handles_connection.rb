@@ -10,16 +10,26 @@ module ClientForPoslynx
         def initialize(opts)
           connection_setter = opts.fetch(:connection_setter)
           connection_setter.call self
-          @on_connect_success = opts.fetch(:on_connect_success)
-          @on_connect_failure = opts.fetch(:on_connect_failure)
+        end
+
+        attr_writer :event_dispatcher
+
+        def reset_event_dispatcher
+          self.event_dispatcher = nil
         end
 
         def connection_completed
-          on_connect_success.call
+          event_dispatcher.event_occurred :connection_completed
         end
 
         def unbind
-          on_connect_failure.call
+          event_dispatcher.event_occurred :unbind
+        end
+
+        private
+
+        def event_dispatcher
+          @event_dispatcher ||= EM_Connector::EventDispatcher.null( self )
         end
       end
 
