@@ -6,7 +6,7 @@ module ClientForPoslynx
 
   describe Net::EM_Connector do
     describe "default initialization" do
-      subject { described_class.new( :the_host, :the_port ) }
+      subject { described_class.new( :the_server, :the_port ) }
 
       it "Has ::EM as its em_system" do
         expect( subject.em_system ).to eq( ::EM )
@@ -23,7 +23,7 @@ module ClientForPoslynx
 
     context "actions and events" do
       subject { described_class.new(
-        :the_host, :the_port,
+        :the_server, :the_port,
         em_system: em_system,
         handler: handler_class
       ) } 
@@ -36,7 +36,7 @@ module ClientForPoslynx
       describe '#connect' do
         before do
           @handler_instance = nil
-          allow( em_system ).to receive( :connect ) do |host, port, handler, *handler_args|
+          allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
             @handler_instance = handler.new( *handler_args )
             nil
           end
@@ -49,8 +49,8 @@ module ClientForPoslynx
           it "tries to open an EM connection using the connector's handler class" do
             subject.connect
 
-            expect( em_system ).to have_received( :connect ) do |host, port, handler, *handler_args|
-              expect( host ).to eq( :the_host )
+            expect( em_system ).to have_received( :connect ) do |server, port, handler, *handler_args|
+              expect( server ).to eq( :the_server )
               expect( port ).to eq( :the_port )
               expect( handler ).to eq( handler_class )
             end
@@ -136,7 +136,7 @@ module ClientForPoslynx
             end
 
             it "reconnects" do
-              expect( @handler_instance ).to receive( :reconnect ).with( :the_host, :the_port )
+              expect( @handler_instance ).to receive( :reconnect ).with( :the_server, :the_port )
               subject.connect
             end
 
@@ -163,7 +163,7 @@ module ClientForPoslynx
       context "when an open connection is lost or remotely disconnected" do
         before do
           @handler_instance = nil
-          allow( em_system ).to receive( :connect ) do |host, port, handler, *handler_args|
+          allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
             @handler_instance = handler.new( *handler_args )
             nil
           end
@@ -198,7 +198,7 @@ module ClientForPoslynx
         context "when previously connected" do
           before do
             @handler_instance = nil
-            allow( em_system ).to receive( :connect ) do |host, port, handler, *handler_args|
+            allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
               @handler_instance = handler.new( *handler_args )
               nil
             end

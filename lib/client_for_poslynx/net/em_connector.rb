@@ -7,25 +7,63 @@ require_relative 'em_connector/event_dispatcher'
 module ClientForPoslynx
   module Net
 
+    # A <tt>ClientForPoslynx::Net::EM_Connector</tt> object is
+    # associated with a specific POSLynx host (lane) and provides
+    # a convenient means of connecting or re-connecting to the
+    # host any number of times within an Event Manager run loop.
+    #
+    # An instance of <tt>ClientForPoslynx::Net::EM_Connector</tt>
+    # may be created either inside or outside of a run loop, but
+    # it must be used from within a run loop to make or interact
+    # with connections since that's the only context in which
+    # Event Manager connections are applicable.
     class EM_Connector
       attr_reader(
-        :host, :port,
+        :server, :port,
         :em_system, :handler,
         :connection, :connection_state
       )
 
-      # Creates a new ClientForPoslynx::Net::EM_Connector
+      # Creates a new
+      # <tt>ClientForPoslynx::Net::EM_Connector</tt>
       # instance.
-      def initialize(host, port, opts={})
-        @host = host
-        @port = port
+      #
+      # The <tt>server</tt> and <tt>port</tt> arguments are
+      # passed to Event Manager's methods for connecting or
+      # reconnecting to the poslynx lane as needed.
+      #
+      # ==== Options
+      # * <tt>:handler<tt> - The class given as the handler
+      #   argument to the <tt>::connect</tt> call to the Event
+      #   Machine system (normally <tt>::EM</tt>).
+      #   Defaults to
+      #   <tt>ClientForPoslynx::Net::EM_Connector::ConnectionHandler</tt>
+      #   This should generally be a subclass of
+      #   <tt>ClientForPoslynx::Net::EM_Connector::ConnectionHandler</tt>
+      #   or be a class that includes
+      #   <tt>ClientforPoslynx::Net::EM_Connector::HandlesConnection</tt>
+      #   and is a subclass of <tt>EM::Connection</tt>.
+      #   When using a substitute for <tt>::EM</tt> as the Event
+      #   Machine system, this might not need to be a subclass of
+      #   <tt>EM::Connection</tt>, though it will need to supply
+      #   substitute implementations of several of the
+      #   <tt>EM::Connection</tt> methods in that case.
+      # * <tt>:em_system</tt> - The event machine system that
+      #   will be called on for making connections.  Defaults
+      #   to <tt>::EM</tt>.  Must implement the <tt>::connect</tt>
+      #   method.
+      #   This is used for dependency injection in unit tests and
+      #   may be useful for inserting instrumentation arround the
+      #   <tt>::connect</tt> call within an application.
+      def initialize(server, port, opts={})
+        @server = server
+        @port   = port
         @em_system = opts.fetch( :em_system, ::EM )
         @handler   = opts.fetch( :handler, EM_Connector::ConnectionHandler )
         self.connection_state = :initial
       end
 
-      # When called from within an EventManager event-handling
-      # loop, asynchronously attempts to open an EventMachine
+      # Asynchronously attempts to open an EventMachine
       # connection to the POSLynx lane.
       #
       # The underlying connection instance is available
@@ -42,7 +80,7 @@ module ClientForPoslynx
       # object (if supplied) is invoked with no arguments.
       #
       # ==== Options
-      # * <tt>:on_success<tt> - An object to receive
+      # * <tt>:on_success</tt> - An object to receive
       #   <tt>#call</tt> when the connection is successfully
       #   opened.
       # * <tt>:on_failure</tt> - An object to receive
@@ -68,7 +106,7 @@ module ClientForPoslynx
       # synchronously.
       #
       # ==== Options
-      # * <tt>:on_completed<tt> - An object to receive
+      # * <tt>:on_completed</tt> - An object to receive
       #   <tt>#call</tt> when finished disconnecting.
       def disconnect(opts={})
         if connection_state == :connected
@@ -92,7 +130,7 @@ module ClientForPoslynx
         }
         self.connection_state = :connecting
         em_system.connect \
-          host, port,
+          server, port,
           handler, handler_opts
       end
 
@@ -110,7 +148,7 @@ module ClientForPoslynx
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
           connection, connect_event_dispatch_opts
         )
-        connection.reconnect host, port
+        connection.reconnect server, port
       end
 
     end
