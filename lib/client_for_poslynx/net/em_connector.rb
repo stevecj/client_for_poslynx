@@ -105,6 +105,10 @@ module ClientForPoslynx
       # to <tt>#disconnect</tt> succeeds immediately and
       # synchronously.
       #
+      # Note that you might never have reason to call this since
+      # Event Machine automatically closes connections when the
+      # run loop is stopped.
+      #
       # ==== Options
       # * <tt>:on_completed</tt> - An object to receive
       #   <tt>#call</tt> when finished disconnecting.
