@@ -13,7 +13,7 @@ module ClientForPoslynx
       end
 
       it "Has Net::EM_Connector::ConnectionHandler as its connection_handler" do
-        expect( subject.handler ).to eq( Net::EM_Connector::ConnectionHandler )
+        expect( subject.handler_class ).to eq( Net::EM_Connector::ConnectionHandler )
       end
 
       it "Sets the connection state to :initial" do

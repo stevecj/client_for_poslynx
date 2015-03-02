@@ -18,12 +18,6 @@ module ClientForPoslynx
     # with connections since that's the only context in which
     # Event Manager connections are applicable.
     class EM_Connector
-      attr_reader(
-        :server, :port,
-        :em_system, :handler,
-        :connection, :connection_state
-      )
-
       # Creates a new
       # <tt>ClientForPoslynx::Net::EM_Connector</tt>
       # instance.
@@ -58,10 +52,34 @@ module ClientForPoslynx
       def initialize(server, port, opts={})
         @server = server
         @port   = port
-        @em_system = opts.fetch( :em_system, ::EM )
-        @handler   = opts.fetch( :handler, EM_Connector::ConnectionHandler )
+        @handler_class = opts.fetch( :handler,   EM_Connector::ConnectionHandler )
+        @em_system     = opts.fetch( :em_system, ::EM )
         self.connection_state = :initial
       end
+
+      # The POSLynx server to be conected to.
+      attr_reader :server
+
+      # The server port through which to connected.
+      attr_reader :port
+
+      # The connection handler instance (connection) after the
+      # first call to <tt>#connect</tt>.  It will be an instance
+      # of the connection handler class.
+      attr_reader :connection
+
+      # The current connection state. One of <tt>:initial</tt>,
+      # <tt>:connecting</tt>, <tt>:connected</tt>,
+      # <tt>:disconnecting</tt>, <tt>:disconnected</tt>.
+      attr_reader :connection_state
+
+      # The connection handler class to be passed as the
+      # handler argument to <tt>EM::connect</tt>.
+      attr_reader :handler_class
+
+      # The Event Manager system that will be called on for
+      # making connections.
+      attr_reader :em_system
 
       # Asynchronously attempts to open an EventMachine
       # connection to the POSLynx lane.
@@ -142,7 +160,7 @@ module ClientForPoslynx
         self.connection_state = :connecting
         em_system.connect \
           server, port,
-          handler, handler_opts
+          handler_class, handler_opts
       end
 
       def build_connection_setter(connect_event_dispatch_opts)
