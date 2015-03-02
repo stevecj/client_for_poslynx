@@ -79,6 +79,12 @@ module ClientForPoslynx
       # <tt>#call</tt> method of the apporopriate callback
       # object (if supplied) is invoked with no arguments.
       #
+      # If another <tt>#connect</tt> request is already pending,
+      # then the the new request is combined with the pending
+      # request, and the appropriate callback will be invoked
+      # for each of those when the connection attempt is
+      # subsequently concluded.
+      #
       # ==== Options
       # * <tt>:on_success</tt> - An object to receive
       #   <tt>#call</tt> when the connection is successfully
@@ -90,8 +96,9 @@ module ClientForPoslynx
         when :initial
           make_initial_connection opts
         when :connected
-          on_success = opts[:on_success]
-          on_success.call if on_success
+          opts[:on_success].call if opts[:on_success]
+        when :connecting
+          piggyback_connect opts
         else
           reconnect opts
         end
@@ -153,6 +160,15 @@ module ClientForPoslynx
           connection, connect_event_dispatch_opts
         )
         connection.reconnect server, port
+      end
+
+      def piggyback_connect(connect_event_dispatch_opts)
+        connect_event_dispatch_opts = connect_event_dispatch_opts.merge(
+          original_dispatcher: connection.event_dispatcher
+        )
+        connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
+          connection, connect_event_dispatch_opts
+        )
       end
 
     end

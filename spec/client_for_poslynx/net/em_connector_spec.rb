@@ -153,6 +153,54 @@ module ClientForPoslynx
           end
         end
 
+        context "when a pending connection is in progress" do
+          before do
+            # Initiate previously pending connection.
+            subject.connect(
+              on_success: on_success_of_pending,
+              on_failure: on_failure_of_pending,
+            )
+
+            subject.connect on_success: on_success, on_failure: on_failure
+          end
+
+          let( :on_success_of_pending ) { double(:on_success_of_pending, call: nil) }
+          let( :on_failure_of_pending ) { double(:on_failure_of_pending, call: nil) }
+
+          it "does not issue its own separate EM connection request" do
+            expect( em_system ).to have_received( :connect ).once
+          end
+
+          context "when connection is completed" do
+            before do
+              @handler_instance.connection_completed
+            end
+
+            it "reports success for previously pending request" do
+              expect( on_success_of_pending ).to have_received( :call )
+            end
+
+            it "reports success for current request" do
+              expect( on_success ).to have_received( :call )
+            end
+          end
+
+          context "when the connection attempt fails" do
+            before do
+              @handler_instance.unbind
+            end
+
+            it "reports failure for previously pending request" do
+              expect( on_failure_of_pending ).to have_received( :call )
+            end
+
+            it "reports failure for current request" do
+              expect( on_failure ).to have_received( :call )
+            end
+          end
+
+        end
+
       end
 
       context "when an open connection is lost or remotely disconnected" do

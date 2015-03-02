@@ -14,6 +14,10 @@ module ClientForPoslynx
 
         attr_writer :event_dispatcher
 
+        def event_dispatcher
+          @event_dispatcher ||= EM_Connector::EventDispatcher.null( self )
+        end
+
         def reset_event_dispatcher
           self.event_dispatcher = nil
         end
@@ -32,9 +36,6 @@ module ClientForPoslynx
 
         attr_reader :state_setter
 
-        def event_dispatcher
-          @event_dispatcher ||= EM_Connector::EventDispatcher.null( self )
-        end
       end
 
     end
