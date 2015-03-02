@@ -42,8 +42,8 @@ module ClientForPoslynx
           end
         end
 
-        let( :on_success ) { double(:on_success) }
-        let( :on_failure ) { double(:on_failure) }
+        let( :on_success ) { double(:on_success, call: nil) }
+        let( :on_failure ) { double(:on_failure, call: nil) }
 
         context "initial connection" do
           it "tries to open an EM connection using the connector's handler class" do
@@ -76,8 +76,6 @@ module ClientForPoslynx
 
             context "when connection is completed" do
               before do
-                allow( on_success ).to receive( :call )
-                allow( on_failure ).to receive( :call )
                 @handler_instance.connection_completed
               end
 
@@ -93,8 +91,6 @@ module ClientForPoslynx
 
             context "when the connection attempt fails" do
               before do
-                allow( on_success ).to receive( :call )
-                allow( on_failure ).to receive( :call )
                 @handler_instance.unbind
               end
 
@@ -109,7 +105,6 @@ module ClientForPoslynx
             end
 
             it "does not report failure later when disconnected subsequent to successful connection" do
-              allow( on_success ).to receive(:call)
               @handler_instance.connection_completed
 
               expect( on_failure ).not_to receive(:call)
@@ -126,8 +121,8 @@ module ClientForPoslynx
           end
 
           it "reports success when currently connected" do
-            expect( on_success ).to receive( :call )
             subject.connect on_success: on_success, on_failure: on_failure
+            expect( on_success ).to have_received( :call )
           end
 
           context "when not currently connected" do
@@ -143,17 +138,19 @@ module ClientForPoslynx
             it "reports success when connected" do
               allow( @handler_instance ).to receive( :reconnect )
               subject.connect on_success: on_success, on_failure: on_failure
+              expect( on_success ).not_to have_received( :call )  # Sanity check.
 
-              expect( on_success ).to receive( :call )
               @handler_instance.connection_completed
+              expect( on_success ).to have_received( :call )
             end
 
             it "reports failure when unbound" do
               allow( @handler_instance ).to receive( :reconnect )
               subject.connect on_success: on_success, on_failure: on_failure
+              expect( on_failure ).not_to have_received( :call )  # Sanity check.
 
-              expect( on_failure ).to receive( :call )
               @handler_instance.unbind
+              expect( on_failure ).to have_received( :call )
             end
           end
         end
@@ -178,12 +175,13 @@ module ClientForPoslynx
       end
 
       describe '#disconnect' do
-        let( :on_completed ) { double(:on_completed) }
+        let( :on_completed ) { double(:on_completed, call: nil) }
 
         context "when has never been connected" do
           before do
-            allow( on_completed ).to receive( :call )
+            allow( @handler_instance ).to receive( :close_connection )  # Sanity check.
             subject.disconnect on_completed: on_completed
+            expect( @handler_instance ).not_to have_received( :close_connection )  # Sanity check.
           end
 
           it "reports completion" do
@@ -212,8 +210,8 @@ module ClientForPoslynx
             end
 
             it "reports completion" do
-              expect( on_completed ).to receive( :call )
               subject.disconnect on_completed: on_completed
+              expect( on_completed ).to have_received( :call )
             end
 
             it "leaves the connection state as :disconnected" do
@@ -227,8 +225,8 @@ module ClientForPoslynx
             end
 
             it "closes the open connection" do
-              expect( @handler_instance ).to receive( :close_connection )
               subject.disconnect
+              expect( @handler_instance ).to have_received( :close_connection )
             end
 
             it "sets the connection state to :disconnecting" do
@@ -239,9 +237,10 @@ module ClientForPoslynx
             context "when done disconnecting" do
               it "reports completion" do
                 subject.disconnect on_completed: on_completed
+                expect( on_completed ).not_to have_received( :call )  # Sanity check.
 
-                expect( on_completed ).to receive( :call )
                 @handler_instance.unbind
+                expect( on_completed ).to have_received( :call )
               end
 
               it "sets the connection state to :disconnected" do
