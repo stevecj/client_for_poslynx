@@ -5,11 +5,10 @@ module ClientForPoslynx
     class EM_Connector
 
       module HandlesConnection
-        def initialize(opts)
-          connection_setter = opts.fetch(:connection_setter)
-          connection_setter.call self
-          @state_setter = opts.fetch(:state_setter)
-          state_setter.call :connecting
+        def initialize(connector_state)
+          @connector_state = connector_state
+          connector_state.connection = self
+          connector_state.connection_status = :connecting
         end
 
         attr_writer :event_dispatcher
@@ -23,18 +22,18 @@ module ClientForPoslynx
         end
 
         def connection_completed
-          state_setter.call :connected
+          connector_state.connection_status = :connected
           event_dispatcher.event_occurred :connection_completed
         end
 
         def unbind
-          state_setter.call :disconnected
+          connector_state.connection_status = :disconnected
           event_dispatcher.event_occurred :unbind
         end
 
         private
 
-        attr_reader :state_setter
+        attr_reader :connector_state
 
       end
 

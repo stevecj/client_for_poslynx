@@ -16,8 +16,8 @@ module ClientForPoslynx
         expect( subject.handler_class ).to eq( Net::EM_Connector::ConnectionHandler )
       end
 
-      it "Sets the connection state to :initial" do
-        expect( subject.connection_state ).to eq( :initial )
+      it "Sets the connection status to :initial" do
+        expect( subject.connection_status ).to eq( :initial )
       end
     end
 
@@ -62,8 +62,8 @@ module ClientForPoslynx
             expect( subject.connection ).to eq( @handler_instance )
           end
 
-          it "sets the connection state to :connecting" do
-            expect( subject.connection_state ).to eq( :connecting )
+          it "sets the connection status to :connecting" do
+            expect( subject.connection_status ).to eq( :connecting )
           end
 
           context "when connection is completed" do
@@ -76,8 +76,8 @@ module ClientForPoslynx
               expect( on_failure ).not_to have_received( :call )
             end
 
-            it "sets the connection state to :connected" do
-              expect( subject.connection_state ).to eq( :connected )
+            it "sets the connection status to :connected" do
+              expect( subject.connection_status ).to eq( :connected )
             end
           end
 
@@ -91,8 +91,8 @@ module ClientForPoslynx
               expect( on_success ).not_to have_received(:call)
             end
 
-            it "sets the connection state to :disconnected" do
-              expect( subject.connection_state ).to eq( :disconnected )
+            it "sets the connection status to :disconnected" do
+              expect( subject.connection_status ).to eq( :disconnected )
             end
           end
 
@@ -215,8 +215,8 @@ module ClientForPoslynx
           @handler_instance.unbind
         end
 
-        it "sets the connection state to :disconnected" do
-          expect( subject.connection_state ).to eq( :disconnected )
+        it "sets the connection status to :disconnected" do
+          expect( subject.connection_status ).to eq( :disconnected )
         end
       end
 
@@ -234,8 +234,8 @@ module ClientForPoslynx
             expect( on_completed ).to have_received( :call )
           end
 
-          it "leaves connection state as :initial" do
-            expect( subject.connection_state ).to eq( :initial )
+          it "leaves connection status as :initial" do
+            expect( subject.connection_status ).to eq( :initial )
           end
         end
 
@@ -260,8 +260,8 @@ module ClientForPoslynx
               expect( on_completed ).to have_received( :call )
             end
 
-            it "leaves the connection state as :disconnected" do
-              expect( subject.connection_state ).to eq( :disconnected )
+            it "leaves the connection status as :disconnected" do
+              expect( subject.connection_status ).to eq( :disconnected )
             end
           end
 
@@ -275,8 +275,8 @@ module ClientForPoslynx
               expect( @handler_instance ).to have_received( :close_connection )
             end
 
-            it "sets the connection state to :disconnecting" do
-              expect( subject.connection_state ).to eq( :disconnecting )
+            it "sets the connection status to :disconnecting" do
+              expect( subject.connection_status ).to eq( :disconnecting )
             end
 
             context "when done disconnecting" do
@@ -286,9 +286,9 @@ module ClientForPoslynx
                 expect( on_completed ).to have_received( :call )
               end
 
-              it "sets the connection state to :disconnected" do
+              it "sets the connection status to :disconnected" do
                 @handler_instance.unbind
-                expect( subject.connection_state ).to eq( :disconnected )
+                expect( subject.connection_status ).to eq( :disconnected )
               end
             end
           end

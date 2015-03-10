@@ -54,7 +54,7 @@ module ClientForPoslynx
         @port   = port
         @handler_class = opts.fetch( :handler,   EM_Connector::ConnectionHandler )
         @em_system     = opts.fetch( :em_system, ::EM )
-        self.connection_state = :initial
+        state.connection_status = :initial
       end
 
       # The POSLynx server to be conected to.
@@ -66,12 +66,16 @@ module ClientForPoslynx
       # The connection handler instance (connection) after the
       # first call to <tt>#connect</tt>.  It will be an instance
       # of the connection handler class.
-      attr_reader :connection
+      def connection
+        state.connection
+      end
 
-      # The current connection state. One of <tt>:initial</tt>,
+      # The current connection status. One of <tt>:initial</tt>,
       # <tt>:connecting</tt>, <tt>:connected</tt>,
       # <tt>:disconnecting</tt>, <tt>:disconnected</tt>.
-      attr_reader :connection_state
+      def connection_status
+        state.connection_status
+      end
 
       # The connection handler class to be passed as the
       # handler argument to <tt>EM::connect</tt>.
@@ -110,7 +114,7 @@ module ClientForPoslynx
       # * <tt>:on_failure</tt> - An object to receive
       #   <tt>#call</tt> when the connection attempt fails.
       def connect(opts={})
-        case connection_state
+        case connection_status
         when :initial
           make_initial_connection opts
         when :connected
@@ -138,10 +142,10 @@ module ClientForPoslynx
       # * <tt>:on_completed</tt> - An object to receive
       #   <tt>#call</tt> when finished disconnecting.
       def disconnect(opts={})
-        if connection_state == :connected
+        if connection_status == :connected
           connection.event_dispatcher =
             EM_Connector::EventDispatcher.for_disconnect(connection, opts)
-          self.connection_state = :disconnecting
+          state.connection_status = :disconnecting
           connection.close_connection
         else
           opts[:on_completed].call
@@ -150,30 +154,25 @@ module ClientForPoslynx
 
       private
 
-      attr_writer :connection, :connection_state
-
-      def make_initial_connection(opts)
-        handler_opts = {
-          connection_setter: build_connection_setter( opts ),
-          state_setter: method( :connection_state= ),
-        }
-        self.connection_state = :connecting
-        em_system.connect \
-          server, port,
-          handler_class, handler_opts
+      def state
+        @state ||= State.new
       end
 
-      def build_connection_setter(connect_event_dispatch_opts)
-       ->(connection) {
-          @connection = connection
-          connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
-            @connection, connect_event_dispatch_opts
-          )
-        }
+      class State < Struct.new( :connection, :connection_status )
+      end
+
+      def make_initial_connection(opts)
+        state.connection_status = :connecting
+        em_system.connect \
+          server, port,
+          handler_class, state
+        connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
+          connection, opts
+        )
       end
 
       def reconnect(connect_event_dispatch_opts)
-        self.connection_state = :connecting
+        state.connection_status = :connecting
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
           connection, connect_event_dispatch_opts
         )
