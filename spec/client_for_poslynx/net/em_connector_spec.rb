@@ -225,9 +225,7 @@ module ClientForPoslynx
 
         context "when has never been connected" do
           before do
-            allow( @handler_instance ).to receive( :close_connection )  # Sanity check.
             subject.disconnect on_completed: on_completed
-            expect( @handler_instance ).not_to have_received( :close_connection )  # Sanity check.
           end
 
           it "reports completion" do
