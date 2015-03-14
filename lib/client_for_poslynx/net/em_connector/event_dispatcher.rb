@@ -5,7 +5,7 @@ module ClientForPoslynx
     class EM_Connector
 
       class EventDispatcher
-        NULL_LISTENER = ->() { }
+        NULL_LISTENER = ->(*) { }
 
         class << self
           private :new
@@ -26,6 +26,12 @@ module ClientForPoslynx
               d[:unbind] = opts[:on_completed] if opts.key?(:on_completed)
             end
           end
+
+          def for_send_request(connection, opts)
+            new( connection ) do |d|
+              d[:unbind] = opts[:on_failure] if opts.key?(:on_failure)
+            end
+          end
         end
 
         def initialize(connection, original_dispatcher = nil)
@@ -38,9 +44,9 @@ module ClientForPoslynx
           callback_map[event_type] = callback
         end
 
-        def event_occurred(event_type)
+        def event_occurred(event_type, *args)
           connection.reset_event_dispatcher
-          original_dispatcher.event_occurred( event_type ) if original_dispatcher
+          original_dispatcher.event_occurred( event_type, *args ) if original_dispatcher
           callback_map[event_type].call
         end
 

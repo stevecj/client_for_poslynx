@@ -55,6 +55,7 @@ module ClientForPoslynx
         @handler_class = opts.fetch( :handler,   EM_Connector::ConnectionHandler )
         @em_system     = opts.fetch( :em_system, ::EM )
         state.connection_status = :initial
+        state.status_of_request = :initial
       end
 
       # The POSLynx server to be conected to.
@@ -75,6 +76,17 @@ module ClientForPoslynx
       # <tt>:disconnecting</tt>, <tt>:disconnected</tt>.
       def connection_status
         state.connection_status
+      end
+
+      # A 2-element array containing the request data and the
+      # options from the most recent <tt>#send_request</tt> call.
+      attr_reader :latest_request
+
+      # The current <tt>#send_request</tt> status. On of
+      # <tt>:initial</tt>, <tt>:pending</tt>,
+      # <tt>:got_response</tt>, <tt>:failed</tt>.
+      def status_of_request
+        state.status_of_request
       end
 
       # The connection handler class to be passed as the
@@ -152,13 +164,47 @@ module ClientForPoslynx
         end
       end
 
+      # When called with an open connection, asynchronously sends
+      # a request to the POSLynx with the given request data.
+      #
+      # When the response is received, the response data is
+      # passed to the <tt>#call</tt> method of the
+      # <tt>:on_response</tt> handler.
+      #
+      # If <tt>#send_request</tt> is called without an open
+      # connection or when the connection is lost before any
+      # response is received, the <tt>#call</tt> method of the
+      # <tt>:on_failure</tt> callback is invoked.
+      #
+      # ==== Options
+      # * <tt>:on_response</tt> - An object to receive
+      #   <tt>#call</tt> with the response data when the response
+      #   is received.
+      # * <tt>:on_failure</tt> - An object to receive
+      #   <tt>#call</tt> if there is no open connection or when
+      #   the connection is lost.
+      def send_request(request_data, opts={})
+        unless connection_status == :connected
+          opts[:on_failure].call if opts[:on_failure]
+          return
+        end
+        self.latest_request = [request_data, opts]
+        state.status_of_request = :pending
+        connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
+          connection, opts
+        )
+        connection.send_request request_data
+      end
+
       private
 
       def state
         @state ||= State.new
       end
 
-      class State < Struct.new( :connection, :connection_status )
+      attr_writer :latest_request
+
+      class State < Struct.new( :connection, :connection_status, :status_of_request )
       end
 
       def make_initial_connection(opts)

@@ -28,7 +28,13 @@ module ClientForPoslynx
 
         def unbind
           connector_state.connection_status = :disconnected
+          connector_state.status_of_request = :failed if connector_state.status_of_request == :pending
           event_dispatcher.event_occurred :unbind
+        end
+
+        def receive_response(response_data)
+          connector_state.status_of_request = :got_response if connector_state.status_of_request == :pending
+          event_dispatcher.event_occurred :receive_response, response_data
         end
 
         private

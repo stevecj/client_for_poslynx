@@ -293,6 +293,76 @@ module ClientForPoslynx
 
         end
       end
+
+      describe '#send_request (while connected)' do
+        let( :opts_for_send_request ) {
+          { on_response: on_response, on_failure: on_failure }
+        }
+        let( :on_response ) { double(:on_response, call: nil) }
+        let( :on_failure  ) { double(:on_failure , call: nil) }
+
+        context "while not connected" do
+          it "reports failure" do
+            subject.send_request :the_request_data, opts_for_send_request
+            expect( on_failure ).to have_received( :call )
+          end
+        end
+
+        context "while connected" do
+          before do
+            @handler_instance = nil
+            allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
+              @handler_instance = handler.new( *handler_args )
+              nil
+            end
+            subject.connect
+            @handler_instance.connection_completed
+            allow( @handler_instance ).to receive( :send_request )
+            subject.send_request :the_request_data, opts_for_send_request
+          end
+
+          it "sends a request to the POSLynx" do
+            expect( @handler_instance ).to have_received( :send_request).with( :the_request_data  )
+          end
+
+          it "records the pending request state" do
+            expect( subject.latest_request ).to eq( [:the_request_data, opts_for_send_request] )
+            expect( subject.status_of_request ).to eq( :pending )
+          end
+
+          context "when a response is received" do
+            before do
+              @handler_instance.receive_response :the_response_data
+            end
+
+            it "records the got-response request state" do
+              expect( subject.status_of_request ).to eq( :got_response )
+            end
+
+          end
+
+          context "when connection is lost w/o response" do
+            before do
+              @handler_instance.unbind
+            end
+
+            it "records the failed request state" do
+              expect( subject.status_of_request ).to eq( :failed )
+            end
+
+            it "reports failure" do
+              expect( on_failure ).to have_received( :call )
+            end
+          end
+
+        end
+      end
+
+      #TODO: Supersede current request. Use #get_response to
+      #      wait for a response originally intended for a prior
+      #      #send_request call.  Use #get_response to reinstate
+      #      a pending request after delegating a response to a
+      #      preceding request's listeners.
     end
   end
 
