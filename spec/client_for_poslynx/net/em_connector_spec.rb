@@ -294,7 +294,7 @@ module ClientForPoslynx
         end
       end
 
-      describe '#send_request (while connected)' do
+      describe '#send_request' do
         let( :opts_for_send_request ) {
           { on_response: on_response, on_failure: on_failure }
         }
@@ -322,7 +322,7 @@ module ClientForPoslynx
           end
 
           it "sends a request to the POSLynx" do
-            expect( @handler_instance ).to have_received( :send_request).with( :the_request_data  )
+            expect( @handler_instance ).to have_received( :send_request ).with( :the_request_data  )
           end
 
           it "records the pending request state" do
@@ -339,6 +339,9 @@ module ClientForPoslynx
               expect( subject.status_of_request ).to eq( :got_response )
             end
 
+            it "reports the response data" do
+              expect( on_response ).to have_received( :call ).with( :the_response_data )
+            end
           end
 
           context "when connection is lost w/o response" do
@@ -358,11 +361,149 @@ module ClientForPoslynx
         end
       end
 
-      #TODO: Supersede current request. Use #get_response to
-      #      wait for a response originally intended for a prior
-      #      #send_request call.  Use #get_response to reinstate
-      #      a pending request after delegating a response to a
-      #      preceding request's listeners.
+      describe '#get_response' do
+        let( :opts_for_get_response ) {
+          { on_response: on_response, on_failure: on_failure }
+        }
+        let( :on_response ) { double(:on_response, call: nil) }
+        let( :on_failure  ) { double(:on_failure , call: nil) }
+
+        context "while not connected" do
+          it "reports failure" do
+            subject.get_response opts_for_get_response
+            expect( on_failure ).to have_received( :call )
+          end
+        end
+
+        context "while connected" do
+          before do
+            @handler_instance = nil
+            allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
+              @handler_instance = handler.new( *handler_args )
+              nil
+            end
+            subject.connect
+            @handler_instance.connection_completed
+          end
+
+          context "when no request has been previously sent" do
+            it "reports failure" do
+              subject.get_response opts_for_get_response
+              expect( on_failure ).to have_received( :call )
+            end
+          end
+
+          context "when a previous request is still pending" do
+            before do
+              allow( @handler_instance ).to receive( :send_request )
+              subject.send_request :prev_request_data, some_prev_option: :some_prev_value
+            end
+
+            it "replaces the previous request options" do
+              subject.get_response opts_for_get_response
+              expect( subject.latest_request ).to eq( [
+                :prev_request_data, opts_for_get_response
+              ] )
+            end
+
+            context "when a response is received" do
+              before do
+                subject.get_response opts_for_get_response
+                @handler_instance.receive_response :the_response_data
+              end
+
+              it "records the got-response request state" do
+                expect( subject.status_of_request ).to eq( :got_response )
+              end
+
+              it "reports the response data" do
+                expect( on_response ).to have_received( :call ).with( :the_response_data )
+              end
+            end
+
+            context "when connection is lost w/o response" do
+              before do
+                subject.get_response opts_for_get_response
+                @handler_instance.unbind
+              end
+
+              it "records the failed request state" do
+                expect( subject.status_of_request ).to eq( :failed )
+              end
+
+              it "reports failure" do
+                expect( on_failure ).to have_received( :call )
+              end
+            end
+          end
+
+          context "when the previous request failed, there is an open connection" do
+            before do
+              allow( @handler_instance ).to receive( :send_request )
+              subject.send_request :prev_request_data
+              @handler_instance.unbind
+              @handler_instance.connection_completed
+            end
+
+            it "reports failure" do
+              subject.get_response opts_for_get_response
+              expect( on_failure ).to have_received( :call )
+            end
+          end
+
+          context "when the previous request has completed" do
+            before do
+              allow( @handler_instance ).to receive( :send_request )
+              subject.send_request :prev_request_data, some_prev_option: :some_prev_value
+              @handler_instance.receive_response :the_previous_response
+            end
+
+            it "replaces the previous request options" do
+              subject.get_response opts_for_get_response
+              expect( subject.latest_request ).to eq( [
+                :prev_request_data, opts_for_get_response
+              ] )
+            end
+
+            it "reverts to a request status of pending" do
+              subject.get_response opts_for_get_response
+              expect( subject.status_of_request ).to eq( :pending )
+            end
+
+            context "when a response is received" do
+              before do
+                subject.get_response opts_for_get_response
+                @handler_instance.receive_response :the_response_data
+              end
+
+              it "records the got-response request state" do
+                expect( subject.status_of_request ).to eq( :got_response )
+              end
+
+              it "reports the response data" do
+                expect( on_response ).to have_received( :call ).with( :the_response_data )
+              end
+            end
+
+            context "when connection is lost w/o response" do
+              before do
+                subject.get_response opts_for_get_response
+                @handler_instance.unbind
+              end
+
+              it "records the failed request state" do
+                expect( subject.status_of_request ).to eq( :failed )
+              end
+
+              it "reports failure" do
+                expect( on_failure ).to have_received( :call )
+              end
+            end
+          end
+
+        end
+      end
+
     end
   end
 

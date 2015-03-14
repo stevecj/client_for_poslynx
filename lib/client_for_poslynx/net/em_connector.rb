@@ -18,6 +18,10 @@ module ClientForPoslynx
     # with connections since that's the only context in which
     # Event Manager connections are applicable.
     class EM_Connector
+
+      class State < Struct.new( :connection, :connection_status, :status_of_request )
+      end
+
       # Creates a new
       # <tt>ClientForPoslynx::Net::EM_Connector</tt>
       # instance.
@@ -54,8 +58,8 @@ module ClientForPoslynx
         @port   = port
         @handler_class = opts.fetch( :handler,   EM_Connector::ConnectionHandler )
         @em_system     = opts.fetch( :em_system, ::EM )
-        state.connection_status = :initial
-        state.status_of_request = :initial
+        state.connection_status ||= :initial
+        state.status_of_request ||= :initial
       end
 
       # The POSLynx server to be conected to.
@@ -196,6 +200,46 @@ module ClientForPoslynx
         connection.send_request request_data
       end
 
+      # This methid exists to support 2 special-case scenarios
+      # that client code may need to handle.
+      #
+      # Scenario A:
+      #
+      # A request is in progress, and the original result
+      # handlers must be replaced with new handlers.  For
+      # instance, a PIN Pad Reset may have been in progress to
+      # initate one workflow, and that workflow is being aborted
+      # to initiate a different workflow.
+      #
+      # Scenario B:
+      #
+      # An attempt was made to cancel a previous pending request
+      # by sending another request, but a response to the
+      # original request was subsequently received because it was
+      # already in transit.  Now, we need to resume waiting for
+      # the response to the second request since it is actually
+      # still pending.
+      #
+      # The options for <tt>#get_response</tt> are the same as
+      # for <tt>#send_request</tt> and have the same meanings,
+      # but since no new request is to be made, there is no
+      # <tt>request_data</tt> argument.
+      #
+      # If the <tt>#status_of_request</tt> is
+      # <tt>:got_response</tt> before the invocation, then it is
+      # reverted to # <tt>:pending</tt>.
+      def get_response(opts={})
+        unless connection_status == :connected && (status_of_request == :pending || status_of_request == :got_response)
+          opts[:on_failure].call if opts[:on_failure]
+          return
+        end
+        self.latest_request[1] = opts
+        state.status_of_request = :pending
+        connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
+          connection, opts
+        )
+      end
+
       private
 
       def state
@@ -203,9 +247,6 @@ module ClientForPoslynx
       end
 
       attr_writer :latest_request
-
-      class State < Struct.new( :connection, :connection_status, :status_of_request )
-      end
 
       def make_initial_connection(opts)
         state.connection_status = :connecting

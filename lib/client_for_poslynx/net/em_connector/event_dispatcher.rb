@@ -30,6 +30,7 @@ module ClientForPoslynx
           def for_send_request(connection, opts)
             new( connection ) do |d|
               d[:unbind] = opts[:on_failure] if opts.key?(:on_failure)
+              d[:receive_response] = opts[:on_response] if opts.key?(:on_failure)
             end
           end
         end
@@ -47,7 +48,7 @@ module ClientForPoslynx
         def event_occurred(event_type, *args)
           connection.reset_event_dispatcher
           original_dispatcher.event_occurred( event_type, *args ) if original_dispatcher
-          callback_map[event_type].call
+          callback_map[event_type].call *args
         end
 
         private
