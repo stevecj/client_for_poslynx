@@ -12,7 +12,7 @@ module ClientForPoslynx
 
     it "allows making a request and returning the response" do
       expect( connector ).to receive( :connect ) do |opts|
-        opts[:on_completed].call
+        opts[:on_success].call
       end
       allow( connector ).to receive( :send_request ) do |data, opts|
         opts[:on_response].call :the_response
@@ -23,6 +23,22 @@ module ClientForPoslynx
         response = s.request( :the_request_data )
       end
       expect( response ).to eq( :the_response )
+    end
+
+    it "raises an exception when making a request with an initial connection failure" do
+      expect( connector ).to receive( :connect ) do |opts|
+        opts[:on_failure].call
+      end
+
+      exception = nil
+      subject.execute do |s|
+        begin
+          s.request( :the_request_data )
+        rescue => ex
+          exception = ex
+        end
+      end
+      expect( exception ).to be_kind_of( Net::EM_Session::RequestError )
     end
   end
 
