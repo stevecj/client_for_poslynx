@@ -40,6 +40,25 @@ module ClientForPoslynx
       end
       expect( exception ).to be_kind_of( Net::EM_Session::RequestError )
     end
+
+    it "raises an exception when making a request that fails" do
+      expect( connector ).to receive( :connect ) do |opts|
+        opts[:on_success].call
+      end
+      allow( connector ).to receive( :send_request ) do |data, opts|
+        opts[:on_failure].call
+      end
+
+      exception = nil
+      subject.execute do |s|
+        begin
+          s.request( :the_request_data )
+        rescue => ex
+          exception = ex
+        end
+      end
+      expect( exception ).to be_kind_of( Net::EM_Session::RequestError )
+    end
   end
 
 end

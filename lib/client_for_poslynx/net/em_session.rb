@@ -27,12 +27,9 @@ module ClientForPoslynx
       end
 
       def request(data)
-        was_successful, *args = Fiber.yield( [:_request, data] )
-        if was_successful
-          args.first
-        else
-          raise RequestError
-        end
+        was_successful, resp_data_or_ex = Fiber.yield( [:_request, data] )
+        raise resp_data_or_ex unless was_successful
+        resp_data_or_ex
       end
 
       private
@@ -42,14 +39,22 @@ module ClientForPoslynx
       def _request(data)
         connector.connect(
           on_success: ->() {
-            connector.send_request data, on_response: ->(response_data) {
-              fiber.resume( [true, response_data] )
-            }
+            connector.send_request(
+              data,
+              on_response: ->(response_data) {
+                fiber.resume( [true, response_data] )
+              },
+              on_failure: ->() {
+                fiber.resume( [false, RequestError.new] )
+              }
+            )
           },
           on_failure: ->() {
-            fiber.resume( [false] )
+            fiber.resume( [false, RequestError.new] )
           }
         )
+      rescue StandardError => e
+        fiber.resume( [false, e] )
       end
     end
 
