@@ -4,8 +4,9 @@ module ClientForPoslynx
   module Net
 
     class EM_Session
-      class RequestError < StandardError
-      end
+      class Error < StandardError ; end
+      class RequestError < Error ; end
+      class ConflictingRequestError < Error ; end
 
       def self.execute(connector)
         new( connector ).execute { |s| yield s }
@@ -27,10 +28,18 @@ module ClientForPoslynx
       end
 
       def request(data)
-        if connector.status_of_request == :pending && Data::Requests::PinPadReset === connector.latest_request[0]
+        if connector.status_of_request == :pending
+          pending_request_data = connector.latest_request[0]
           pending_opts = connector.latest_request[1]
-          pending_opts[:on_failure].call if pending_opts[:on_failure]
-          was_successful, resp_data_or_ex = Fiber.yield( [:_get_response] )
+          if Data::Requests::PinPadReset === data && Data::Requests::PinPadReset === pending_request_data
+            pending_opts[:on_failure].call if pending_opts[:on_failure]
+            was_successful, resp_data_or_ex = Fiber.yield( [:_get_response] )
+          elsif data.class == pending_request_data.class
+            raise ConflictingRequestError, "Attempted a request while another request of the same type is in progress"
+          else
+            pending_opts[:on_failure].call if pending_opts[:on_failure]
+            was_successful, resp_data_or_ex = Fiber.yield( [:_request, data] )
+          end
         else
           was_successful, resp_data_or_ex = Fiber.yield( [:_request, data] )
         end

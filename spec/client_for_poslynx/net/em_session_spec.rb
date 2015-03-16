@@ -75,9 +75,7 @@ module ClientForPoslynx
       let( :prev_request_data ) {
         Data::Requests::PinPadReset.new
       }
-      let( :prev_on_failure ) {
-        double(:prev_on_failure, call: nil)
-      }
+      let( :prev_on_failure ) { double(:prev_on_failure, call: nil) }
 
       it "usurps the pending request when making a new pin pad reset request" do
         allow( connector ).to receive( :get_response ) do |opts|
@@ -91,6 +89,65 @@ module ClientForPoslynx
         end
         expect( prev_on_failure ).to have_received( :call )
         expect( response ).to eq( :the_response )
+      end
+    end
+
+    context "when a request is pending" do
+      before do
+        allow( connector ).to receive( :connection_status ).and_return( :connected )
+        allow( connector ).to receive( :status_of_request ).and_return( :pending )
+        allow( connector ).to receive( :latest_request ).and_return( [
+          prev_request_data,
+          {
+            on_response:    prev_on_response,
+            on_failure:    prev_on_failure,
+            on_supplanted: prev_on_failure,
+          }
+        ] )
+      end
+      let( :prev_request_data ) { Data::Requests::PinPadInitialize.new }
+      let( :prev_on_response    ) { double(:prev_on_response,   call: nil) }
+      let( :prev_on_failure     ) { double(:prev_on_failure,    call: nil) }
+      let( :prev_on_supplainted ) { double(:prev_on_supplanted, call: nil) }
+
+      context "making a new request of the same type" do
+        it "raises an appropriate exception" do
+          request_data = Data::Requests::PinPadInitialize.new
+
+          exception = nil
+          subject.execute do |s|
+            begin
+              s.request( request_data )
+            rescue => ex
+              exception = ex
+            end
+          end
+          expect( exception ).to be_kind_of( Net::EM_Session::ConflictingRequestError )
+        end
+      end
+
+      context "making a new request of a different type" do
+        it "supplants the pending request if possible" do
+          request_data = Data::Requests::PinPadDisplayMessage.new
+          expect( connector ).to receive( :connect ) do |opts|
+            opts[:on_success].call
+          end
+          allow( connector ).to receive( :send_request ).with( request_data, anything ) do |data, opts|
+            opts[:on_response].call :the_response
+          end
+
+          response = nil
+          subject.execute do |s|
+            response = s.request( request_data )
+          end
+          expect( prev_on_failure ).to have_received( :call )
+          expect( response ).to eq( :the_response )
+        end
+
+        it "supplants the other event chain if supplanting the pending request is unsuccessful"
+
+        it "fails both the new and previously pending requests on request failure without response"
+
       end
     end
 
