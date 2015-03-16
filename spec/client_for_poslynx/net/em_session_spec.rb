@@ -8,7 +8,11 @@ module ClientForPoslynx
     subject {
       described_class.new( connector )
     }
-    let( :connector ) { double(:connector) }
+    let( :connector ) { double(
+      :connector,
+      status_of_request: nil,
+      latest_request: nil,
+    ) }
 
     it "allows making a request and returning the response" do
       expect( connector ).to receive( :connect ) do |opts|
@@ -59,6 +63,37 @@ module ClientForPoslynx
       end
       expect( exception ).to be_kind_of( Net::EM_Session::RequestError )
     end
+
+    context "when an existing pin pad reset request is pending" do
+      before do
+        allow( connector ).to receive( :status_of_request ).and_return( :pending )
+        allow( connector ).to receive( :latest_request ).and_return(
+          [ prev_request_data, { on_failure: prev_on_failure} ]
+        )
+      end
+
+      let( :prev_request_data ) {
+        Data::Requests::PinPadReset.new
+      }
+      let( :prev_on_failure ) {
+        double(:prev_on_failure, call: nil)
+      }
+
+      it "usurps the pending request when making a new pin pad reset request" do
+        allow( connector ).to receive( :get_response ) do |opts|
+          opts[:on_response].call :the_response
+        end
+
+        response = nil
+        request_data = Data::Requests::PinPadReset.new
+        subject.execute do |s|
+          response = s.request( request_data )
+        end
+        expect( prev_on_failure ).to have_received( :call )
+        expect( response ).to eq( :the_response )
+      end
+    end
+
   end
 
 end
