@@ -45,15 +45,7 @@ module ClientForPoslynx
       def _request(data)
         connector.connect(
           on_success: ->() {
-            connector.send_request(
-              data,
-              on_response: ->(response_data) {
-                fiber.resume( [true, response_data] )
-              },
-              on_failure: ->() {
-                fiber.resume( [false, RequestError.new] )
-              }
-            )
+            connector.send_request data, response_handlers
           },
           on_failure: ->() {
             fiber.resume( [false, RequestError.new] )
@@ -64,14 +56,18 @@ module ClientForPoslynx
       end
 
       def _get_response
-        connector.get_response(
-              on_response: ->(response_data) {
-                fiber.resume( [true, response_data] )
-              },
-              on_failure: ->() {
-                fiber.resume( [false, RequestError.new] )
-              }
-        )
+        connector.get_response response_handlers
+      end
+
+      def response_handlers
+        {
+          on_response: ->(response_data) {
+            fiber.resume( [true, response_data] )
+          },
+          on_failure: ->() {
+            fiber.resume( [false, RequestError.new] )
+          }
+        }
       end
     end
 
