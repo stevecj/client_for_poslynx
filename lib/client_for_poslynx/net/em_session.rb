@@ -12,10 +12,11 @@ module ClientForPoslynx
         new( connector ).execute { |s| yield s }
       end
 
-      attr_reader :connector
+      attr_reader :connector, :status
 
       def initialize(connector)
-        @connector = connector
+        self.connector = connector
+        self.status = :initialized
       end
 
       def execute
@@ -23,11 +24,12 @@ module ClientForPoslynx
           yield self
           :done
         end
-        callback = fiber.resume
-        send *callback unless callback == :done
+        self.status = :engaged
+        dispatch fiber.resume
       end
 
       def request(data)
+        raise RequestError if status == :detached
         if connector.status_of_request == :pending
           pending_request_data = connector.latest_request[0]
           pending_opts = connector.latest_request[1]
@@ -48,7 +50,13 @@ module ClientForPoslynx
 
       private
 
+      attr_writer :connector, :status
       attr_reader :fiber
+
+      def dispatch(fiber_callback)
+        return if fiber_callback == :done
+        send *fiber_callback
+      end
 
       def _request(data, overlaps_request=nil)
         connector.connect(
@@ -57,11 +65,11 @@ module ClientForPoslynx
             connector.send_request data, send_request_opts
           },
           on_failure: ->() {
-            fiber.resume( [false, RequestError.new] )
+            dispatch fiber.resume( [false, RequestError.new] )
           }
         )
       rescue StandardError => e
-        fiber.resume( [false, e] )
+        dispatch fiber.resume( [false, e] )
       end
 
       def _get_response
@@ -73,23 +81,31 @@ module ClientForPoslynx
         {
           on_response: ->(response_data) {
             if overlapped_request_data && overlapped_request_data.class.response_class === response_data
-              overlapped_request_opts[:on_supplanted].call if overlapped_request_opts[:on_supplanted]
+              overlapped_request_opts[:on_detached].call if overlapped_request_opts[:on_detached]
               overlapped_request_opts[:on_response].call( response_data ) if overlapped_request_opts[:on_response]
               _get_response
             else
               if overlapped_request_data && overlapped_request_opts[:on_failure]
                 overlapped_request_opts[:on_failure].call
               end
-              fiber.resume( [true, response_data] )
+              dispatch fiber.resume( [true, response_data] )
             end
           },
           on_failure: ->() {
             if overlapped_request_data && overlapped_request_opts[:on_failure]
               overlapped_request_opts[:on_failure].call
             end
-            fiber.resume( [false, RequestError.new] )
-          }
+            dispatch fiber.resume( [false, RequestError.new] )
+          },
+          on_detached: ->(){
+            detach!
+          },
         }
+      end
+
+      def detach!
+        self.connector = nil
+        self.status = :detached
       end
     end
 
