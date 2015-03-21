@@ -3,22 +3,53 @@
 module ClientForPoslynx
   module Net
 
+    # Provides a synchronous, structured API for making
+    # requests to POSLynx host using Event Machine and returning
+    # responses when received.
+    #
+    # Eliminates the need for complicated and messy event
+    # callback chains in POSLynx client code.
+    #
+    # Multiple sessions may be in effect at the same time,
+    # interacting with the same POSLyx host by using the same
+    # Event Machine connector.  This is important for performing
+    # actions such as initiating a new payment interaction when
+    # a previous interaction was abandoned.
     class EM_Session
+
+      # Base class for errors raised by the session to code that
+      # is running in the context of a sesssion.
       class Error < StandardError ; end
+
+      # Raised when an error condition is detected while making
+      # a request or while waiting for the response.
       class RequestError < Error ; end
+
+      # Raised when attempting to make a request while another
+      # session is waiting for a response to a request of the
+      # same type (other than PinPadReset).
       class ConflictingRequestError < Error ; end
 
+      # Executes the given block in the context of a session
+      # attached to the given Event Machine connector.  The
+      # session is passed as the argument to the block.
       def self.execute(connector)
         new( connector ).execute { |s| yield s }
       end
 
-      attr_reader :connector, :status
+      attr_reader :connector
 
+      attr_reader :status
+
+      # Builds a new EM_Session instance attached to the given
+      # Event Machine connector.
       def initialize(connector)
         self.connector = connector
         self.status = :initialized
       end
 
+      # Executes the given block in the context of the session
+      # The session is passed as the argument to the block.
       def execute
         @fiber = Fiber.new do
           yield self
@@ -28,6 +59,26 @@ module ClientForPoslynx
         dispatch fiber.resume
       end
 
+      # Called from within an executed block of code for the
+      # session to send request data to the POSLynx and return
+      # the response to the request once it is received.
+      # If a connection could not be established or is lost
+      # before a response can be received, then a
+      # <tt>RequestError</tt> exception will be raised.
+      #
+      # If another session attempts to supplant this request, but
+      # the response to this request is still received, then the
+      # response is returned as normal, but this session's status
+      # is changed to detached, and any subsequent request
+      # attempts made in this session will result in
+      # <tt>RequestError</tt> being raised.
+      #
+      # If another session is already waiting for a response,
+      # then this will attempt to usurp or supplant the other
+      # request.  If the new request is of the same type as the
+      # existing request, and the type is not PinPadReset, then
+      # this call will raise a <tt>ConflictingRequestError</tt>
+      # exception.
       def request(data)
         raise RequestError if status == :detached
         if connector.status_of_request == :pending
