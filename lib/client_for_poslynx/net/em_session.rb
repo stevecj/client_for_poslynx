@@ -131,24 +131,45 @@ module ClientForPoslynx
         overlapped_request_data = overlaps_request && overlaps_request.request_data
         overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
         {
-          on_response: ->(response_data) {
-            if overlapped_request_data && overlapped_request_data.class.response_class === response_data
+          on_response: on_response_handler( overlaps_request ),
+          on_failure: on_failure_handler( overlaps_request ),
+          on_detached: ->(){ detach! },
+        }
+      end
+
+      def on_response_handler(overlaps_request)
+        if overlaps_request
+          overlapped_request_data = overlaps_request && overlaps_request.request_data
+          overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
+          ->(response_data) {
+            if overlapped_request_data.potential_response?( response_data )
               overlapped_request_callbacks.call :on_detached
               overlapped_request_callbacks.call :on_response, response_data
               _get_response
             else
-              overlapped_request_callbacks.call :on_failure if overlapped_request_data
+              overlapped_request_callbacks.call :on_failure
               dispatch fiber.resume( [true, response_data] )
             end
-          },
-          on_failure: ->() {
-            overlapped_request_callbacks.call :on_failure if overlapped_request_data
+          }
+        else
+          ->(response_data) {
+            dispatch fiber.resume( [true, response_data] )
+          }
+        end
+      end
+
+      def on_failure_handler(overlaps_request)
+        if overlaps_request
+          overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
+          ->() {
+            overlapped_request_callbacks.call :on_failure if overlaps_request
             dispatch fiber.resume( [false, RequestError.new] )
-          },
-          on_detached: ->(){
-            detach!
-          },
-        }
+          }
+        else
+          ->() {
+            dispatch fiber.resume( [false, RequestError.new] )
+          }
+        end
       end
 
       def detach!

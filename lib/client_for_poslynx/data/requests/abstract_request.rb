@@ -29,6 +29,12 @@ module ClientForPoslynx
           visitor.public_send "visit_#{simple_class_name}", self
         end
 
+        # True is the given object is of the right type to be a
+        # response to a request made using this request data.
+        def potential_response?(candidate)
+          self.class.response_class === candidate
+        end
+
       end
 
     end
