@@ -83,9 +83,9 @@ module ClientForPoslynx
         raise RequestError if status == :detached
         if connector.status_of_request == :pending
           pending_request_data = connector.latest_request.request_data
-          pending_opts = connector.latest_request.result_callbacks
+          pending_callbacks = connector.latest_request.result_callbacks
           if Data::Requests::PinPadReset === data && Data::Requests::PinPadReset === pending_request_data
-            pending_opts[:on_failure].call if pending_opts[:on_failure]
+            pending_callbacks.call :on_failure
             was_successful, resp_data_or_ex = Fiber.yield( [:_get_response] )
           elsif data.class == pending_request_data.class
             raise ConflictingRequestError, "Attempted a request while another request of the same type is in progress"
@@ -112,8 +112,8 @@ module ClientForPoslynx
       def _request(data, overlaps_request=nil)
         connector.connect(
           on_success: ->() {
-            send_request_opts = response_handlers( overlaps_request )
-            connector.send_request data, send_request_opts
+            send_request_callbacks = response_handlers( overlaps_request )
+            connector.send_request data, send_request_callbacks
           },
           on_failure: ->() {
             dispatch fiber.resume( [false, RequestError.new] )
@@ -129,24 +129,20 @@ module ClientForPoslynx
 
       def response_handlers(overlaps_request=nil)
         overlapped_request_data = overlaps_request && overlaps_request.request_data
-        overlapped_request_opts = overlaps_request && overlaps_request.result_callbacks
+        overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
         {
           on_response: ->(response_data) {
             if overlapped_request_data && overlapped_request_data.class.response_class === response_data
-              overlapped_request_opts[:on_detached].call if overlapped_request_opts[:on_detached]
-              overlapped_request_opts[:on_response].call( response_data ) if overlapped_request_opts[:on_response]
+              overlapped_request_callbacks.call :on_detached
+              overlapped_request_callbacks.call :on_response, response_data
               _get_response
             else
-              if overlapped_request_data && overlapped_request_opts[:on_failure]
-                overlapped_request_opts[:on_failure].call
-              end
+              overlapped_request_callbacks.call :on_failure if overlapped_request_data
               dispatch fiber.resume( [true, response_data] )
             end
           },
           on_failure: ->() {
-            if overlapped_request_data && overlapped_request_opts[:on_failure]
-              overlapped_request_opts[:on_failure].call
-            end
+            overlapped_request_callbacks.call :on_failure if overlapped_request_data
             dispatch fiber.resume( [false, RequestError.new] )
           },
           on_detached: ->(){

@@ -4,6 +4,7 @@ require_relative 'em_connector/handles_connection'
 require_relative 'em_connector/connection_handler'
 require_relative 'em_connector/event_dispatcher'
 require_relative 'em_connector/request_call'
+require_relative 'em_connector/callback_map'
 
 module ClientForPoslynx
   module Net
@@ -83,19 +84,21 @@ module ClientForPoslynx
         state.connection_status
       end
 
-      # A 2-element array containing the request data and the
-      # options from the most recent <tt>#send_request</tt> call.
+      # An instance of <tt>EM_Connector::RequestCall</tt>
+      # containing the request data and result callbacks from the
+      # most recent <tt>#send_request</tt> or
+      # <tt>#get_response</tt> call.
       attr_reader :latest_request
 
-      # The current <tt>#send_request</tt> status. On of
+      # The current <tt>#send_request</tt> status. One of
       # <tt>:initial</tt>, <tt>:pending</tt>,
       # <tt>:got_response</tt>, <tt>:failed</tt>.
       def status_of_request
         state.status_of_request
       end
 
-      # The connection handler class to be passed as the
-      # handler argument to <tt>EM::connect</tt>.
+      # The connection handler class to be passed as the handler
+      # argument to <tt>EM::connect</tt>.
       attr_reader :handler_class
 
       # The Event Manager system that will be called on for
@@ -105,10 +108,10 @@ module ClientForPoslynx
       # Asynchronously attempts to open an EventMachine
       # connection to the POSLynx lane.
       #
-      # The underlying connection instance is available
-      # via <tt>#connection</tt> immediately after the call
-      # returns, though it might not yet represent a completed,
-      # open connection.
+      # The underlying connection instance is available via
+      # <tt>#connection</tt> immediately after the call returns,
+      # though it might not yet represent a completed, open
+      # connection.
       #
       # If the connector already has a currently open connection,
       # then the call to <tt>#connect</tt> succeeds immediately
@@ -119,27 +122,28 @@ module ClientForPoslynx
       # object (if supplied) is invoked with no arguments.
       #
       # If another <tt>#connect</tt> request is already pending,
-      # then the the new request is combined with the pending
+      # then the the new request is combined with the pending for
       # request, and the appropriate callback will be invoked
-      # for each of those when the connection attempt is
-      # subsequently concluded.
+      # each of those when the connection attempt is subsequently
+      # concluded.
       #
-      # ==== Options
+      # ==== Result callback options
       # * <tt>:on_success</tt> - An object to receive
       #   <tt>#call</tt> when the connection is successfully
       #   opened.
       # * <tt>:on_failure</tt> - An object to receive
       #   <tt>#call</tt> when the connection attempt fails.
-      def connect(opts={})
+      def connect(result_callbacks={})
+        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
         case connection_status
         when :initial
-          make_initial_connection opts
+          make_initial_connection result_callbacks
         when :connected
-          opts[:on_success].call if opts[:on_success]
+          result_callbacks.call :on_success
         when :connecting
-          piggyback_connect opts
+          piggyback_connect result_callbacks
         else
-          reconnect opts
+          reconnect result_callbacks
         end
       end
 
@@ -155,17 +159,18 @@ module ClientForPoslynx
       # Event Machine automatically closes connections when the
       # run loop is stopped.
       #
-      # ==== Options
+      # ==== Result callback options
       # * <tt>:on_completed</tt> - An object to receive
       #   <tt>#call</tt> when finished disconnecting.
-      def disconnect(opts={})
+      def disconnect(result_callbacks={})
+        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
         if connection_status == :connected
           connection.event_dispatcher =
-            EM_Connector::EventDispatcher.for_disconnect(connection, opts)
+            EM_Connector::EventDispatcher.for_disconnect(connection, result_callbacks)
           state.connection_status = :disconnecting
           connection.close_connection
         else
-          opts[:on_completed].call
+          result_callbacks.call :on_completed
         end
       end
 
@@ -181,22 +186,34 @@ module ClientForPoslynx
       # response is received, the <tt>#call</tt> method of the
       # <tt>:on_failure</tt> callback is invoked.
       #
-      # ==== Options
+      # * <tt>request_data</tt> - The request to be sent. Should
+      #   be an instance of one of the
+      #   <tt>ClientForPoslynx::Data::Requests::...</tt> classes.
+      # * <tt>result_callbacks</tt> - A hash map of objects, each
+      #   of which handles a response condition when it receives
+      #   <tt>#call</tt>
+      #
+      # ==== Result callback options
       # * <tt>:on_response</tt> - An object to receive
       #   <tt>#call</tt> with the response data when the response
       #   is received.
       # * <tt>:on_failure</tt> - An object to receive
       #   <tt>#call</tt> if there is no open connection or when
       #   the connection is lost.
-      def send_request(request_data, opts={})
+      # * Any other callback(s) that might need to be received
+      #   from a collaborator via <tt>#latest_request</tt> data
+      #   while the request is pending. <tt>EMSession</tt> may
+      #   invoke an <tt>:on_detached</tt> callback, for example.
+      def send_request(request_data, result_callbacks={})
+        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
         unless connection_status == :connected
-          opts[:on_failure].call if opts[:on_failure]
+          result_callbacks.call :on_failure
           return
         end
-        self.latest_request = EM_Connector.RequestCall( request_data, opts )
+        self.latest_request = EM_Connector.RequestCall( request_data, result_callbacks )
         state.status_of_request = :pending
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
-          connection, opts
+          connection, result_callbacks
         )
         connection.send_request request_data
       end
@@ -229,15 +246,16 @@ module ClientForPoslynx
       # If the <tt>#status_of_request</tt> is
       # <tt>:got_response</tt> before the invocation, then it is
       # reverted to # <tt>:pending</tt>.
-      def get_response(opts={})
+      def get_response(result_callbacks={})
+        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
         unless connection_status == :connected && (status_of_request == :pending || status_of_request == :got_response)
-          opts[:on_failure].call if opts[:on_failure]
+          result_callbacks.call :on_failure
           return
         end
-        self.latest_request = EM_Connector.RequestCall(latest_request.request_data, opts)
+        self.latest_request = EM_Connector.RequestCall(latest_request.request_data, result_callbacks)
         state.status_of_request = :pending
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
-          connection, opts
+          connection, result_callbacks
         )
       end
 
@@ -252,13 +270,13 @@ module ClientForPoslynx
         @latest_request = EM_Connector.RequestCall( *args )
       end
 
-      def make_initial_connection(opts)
+      def make_initial_connection(result_callbacks)
         state.connection_status = :connecting
         em_system.connect \
           server, port,
           handler_class, state
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
-          connection, opts
+          connection, result_callbacks
         )
       end
 
@@ -270,12 +288,12 @@ module ClientForPoslynx
         connection.reconnect server, port
       end
 
-      def piggyback_connect(connect_event_dispatch_opts)
-        connect_event_dispatch_opts = connect_event_dispatch_opts.merge(
+      def piggyback_connect(response_callbacks)
+        response_callbacks = response_callbacks.merge(
           original_dispatcher: connection.event_dispatcher
         )
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
-          connection, connect_event_dispatch_opts
+          connection, response_callbacks
         )
       end
 
