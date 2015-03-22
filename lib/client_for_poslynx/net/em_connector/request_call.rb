@@ -17,7 +17,7 @@ module ClientForPoslynx
 
       class RequestCall < Struct.new(:request_data, :result_callbacks)
         def initialize(request_data, result_callbacks={})
-          result_callbacks = EM_Connector.CallbackMap( result_callbacks )
+          result_callbacks = EMC.CallbackMap( result_callbacks )
           super request_data, result_callbacks
           freeze
         end

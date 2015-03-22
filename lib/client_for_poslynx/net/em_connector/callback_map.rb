@@ -6,10 +6,10 @@ module ClientForPoslynx
     class EM_Connector
 
       def self.CallbackMap(*args)
-        if args.length == 1 && CallbackMap === args.first
+        if args.length == 1 && EMC::CallbackMap === args.first
           return args.first
         else
-          CallbackMap.new( *args )
+          EMC::CallbackMap.new( *args )
         end
       end
 

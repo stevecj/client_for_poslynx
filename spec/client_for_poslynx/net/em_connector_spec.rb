@@ -326,7 +326,7 @@ module ClientForPoslynx
           end
 
           it "records the pending request state" do
-            expect( subject.latest_request ).to eq( Net::EM_Connector.RequestCall(
+            expect( subject.latest_request ).to eq( Net::EMC.RequestCall(
               :the_request_data, opts_for_send_request
             ) )
             expect( subject.status_of_request ).to eq( :pending )
@@ -403,7 +403,7 @@ module ClientForPoslynx
 
             it "replaces the previous request options" do
               subject.get_response opts_for_get_response
-              expect( subject.latest_request ).to eq( Net::EM_Connector.RequestCall(
+              expect( subject.latest_request ).to eq( Net::EMC.RequestCall(
                 :prev_request_data, opts_for_get_response
               ) )
             end
@@ -462,7 +462,7 @@ module ClientForPoslynx
 
             it "replaces the previous request options" do
               subject.get_response opts_for_get_response
-              expect( subject.latest_request ).to eq( Net::EM_Connector.RequestCall(
+              expect( subject.latest_request ).to eq( Net::EMC.RequestCall(
                 :prev_request_data, opts_for_get_response
               ) )
             end

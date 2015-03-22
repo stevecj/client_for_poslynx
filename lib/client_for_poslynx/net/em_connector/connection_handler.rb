@@ -5,7 +5,7 @@ module ClientForPoslynx
     class EM_Connector
 
       class ConnectionHandler < EM::Connection
-        include EM_Connector::HandlesConnection
+        include EMC::HandlesConnection
       end
 
     end

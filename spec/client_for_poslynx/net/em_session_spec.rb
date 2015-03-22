@@ -71,7 +71,7 @@ module ClientForPoslynx
       before do
         allow( connector ).to receive( :status_of_request ).and_return( :pending )
         allow( connector ).to receive( :latest_request ).and_return(
-          Net::EM_Connector.RequestCall(
+          Net::EMC.RequestCall(
             prev_request_data, { on_failure: prev_on_failure}
           )
         )
@@ -102,7 +102,7 @@ module ClientForPoslynx
         allow( connector ).to receive( :connection_status ).and_return( :connected )
         allow( connector ).to receive( :status_of_request ).and_return( :pending )
         allow( connector ).to receive( :latest_request ).and_return(
-          Net::EM_Connector.RequestCall(
+          Net::EMC.RequestCall(
             prev_request_data,
             {
               on_response: prev_on_response,

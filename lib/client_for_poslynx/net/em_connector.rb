@@ -1,5 +1,15 @@
 # coding: utf-8
 
+module ClientForPoslynx
+  module Net
+    class EM_Connector ; end
+
+    # Convenient shorthand for EM_Connector for use within
+    # Net and its sub-nested classes and modules.
+    EMC = EM_Connector
+  end
+end
+
 require_relative 'em_connector/handles_connection'
 require_relative 'em_connector/connection_handler'
 require_relative 'em_connector/event_dispatcher'
@@ -58,7 +68,7 @@ module ClientForPoslynx
       def initialize(server, port, opts={})
         @server = server
         @port   = port
-        @handler_class = opts.fetch( :handler,   EM_Connector::ConnectionHandler )
+        @handler_class = opts.fetch( :handler,   EMC::ConnectionHandler )
         @em_system     = opts.fetch( :em_system, ::EM )
         state.connection_status ||= :initial
         state.status_of_request ||= :initial
@@ -134,7 +144,7 @@ module ClientForPoslynx
       # * <tt>:on_failure</tt> - An object to receive
       #   <tt>#call</tt> when the connection attempt fails.
       def connect(result_callbacks={})
-        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
+        result_callbacks = EMC.CallbackMap(result_callbacks)
         case connection_status
         when :initial
           make_initial_connection result_callbacks
@@ -163,10 +173,10 @@ module ClientForPoslynx
       # * <tt>:on_completed</tt> - An object to receive
       #   <tt>#call</tt> when finished disconnecting.
       def disconnect(result_callbacks={})
-        result_callbacks = EM_Connector.CallbackMap( result_callbacks )
+        result_callbacks = EMC.CallbackMap( result_callbacks )
         if connection_status == :connected
           connection.event_dispatcher =
-            EM_Connector::EventDispatcher.for_disconnect( connection, result_callbacks )
+            EMC::EventDispatcher.for_disconnect( connection, result_callbacks )
           state.connection_status = :disconnecting
           connection.close_connection
         else
@@ -205,14 +215,14 @@ module ClientForPoslynx
       #   while the request is pending. <tt>EMSession</tt> may
       #   invoke an <tt>:on_detached</tt> callback, for example.
       def send_request(request_data, result_callbacks={})
-        result_callbacks = EM_Connector.CallbackMap( result_callbacks )
+        result_callbacks = EMC.CallbackMap( result_callbacks )
         unless connection_status == :connected
           result_callbacks.call :on_failure
           return
         end
-        self.latest_request = EM_Connector.RequestCall( request_data, result_callbacks )
+        self.latest_request = EMC.RequestCall( request_data, result_callbacks )
         state.status_of_request = :pending
-        connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
+        connection.event_dispatcher = EMC::EventDispatcher.for_send_request(
           connection, result_callbacks
         )
         connection.send_request request_data
@@ -247,14 +257,14 @@ module ClientForPoslynx
       # <tt>:got_response</tt> before the invocation, then it is
       # reverted to # <tt>:pending</tt>.
       def get_response(result_callbacks={})
-        result_callbacks = EM_Connector.CallbackMap( result_callbacks )
+        result_callbacks = EMC.CallbackMap( result_callbacks )
         unless connection_status == :connected && (status_of_request == :pending || status_of_request == :got_response)
           result_callbacks.call :on_failure
           return
         end
-        self.latest_request = EM_Connector.RequestCall( latest_request.request_data, result_callbacks )
+        self.latest_request = EMC.RequestCall( latest_request.request_data, result_callbacks )
         state.status_of_request = :pending
-        connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
+        connection.event_dispatcher = EMC::EventDispatcher.for_send_request(
           connection, result_callbacks
         )
       end
@@ -267,7 +277,7 @@ module ClientForPoslynx
 
       def latest_request=(value)
         args = Array(value)
-        @latest_request = EM_Connector.RequestCall( *args )
+        @latest_request = EMC.RequestCall( *args )
       end
 
       def make_initial_connection(result_callbacks)
@@ -275,14 +285,14 @@ module ClientForPoslynx
         em_system.connect \
           server, port,
           handler_class, state
-        connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
+        connection.event_dispatcher = EMC::EventDispatcher.for_connect(
           connection, result_callbacks
         )
       end
 
       def reconnect(connect_event_dispatch_opts)
         state.connection_status = :connecting
-        connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
+        connection.event_dispatcher = EMC::EventDispatcher.for_connect(
           connection, connect_event_dispatch_opts
         )
         connection.reconnect server, port
@@ -292,7 +302,7 @@ module ClientForPoslynx
         response_callbacks = response_callbacks.merge(
           original_dispatcher: connection.event_dispatcher
         )
-        connection.event_dispatcher = EM_Connector::EventDispatcher.for_connect(
+        connection.event_dispatcher = EMC::EventDispatcher.for_connect(
           connection, response_callbacks
         )
       end

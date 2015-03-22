@@ -16,7 +16,7 @@ module ClientForPoslynx
 
           def for_connect(connection, opts)
             original_dispatcher = opts[:original_dispatcher]
-            callback_map = EM_Connector.CallbackMap(
+            callback_map = EMC.CallbackMap(
               connection_completed: opts[:on_success],
               unbind:               opts[:on_failure],
             )
@@ -24,14 +24,14 @@ module ClientForPoslynx
           end
 
           def for_disconnect(connection, opts)
-            callback_map = EM_Connector.CallbackMap(
+            callback_map = EMC.CallbackMap(
               unbind: opts[:on_completed]
             )
             new( connection, nil, callback_map )
           end
 
           def for_send_request(connection, opts)
-            callback_map = EM_Connector.CallbackMap(
+            callback_map = EMC.CallbackMap(
               receive_response: opts[:on_response],
               unbind:           opts[:on_failure],
             )
@@ -39,7 +39,7 @@ module ClientForPoslynx
           end
         end
 
-        def initialize(connection, original_dispatcher = nil, callback_map = EM_Connector.CallbackMap())
+        def initialize(connection, original_dispatcher = nil, callback_map = EMC.CallbackMap())
           @connection = connection
           @original_dispatcher = original_dispatcher
           @callback_map = callback_map
