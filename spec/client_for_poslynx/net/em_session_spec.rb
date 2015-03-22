@@ -71,7 +71,9 @@ module ClientForPoslynx
       before do
         allow( connector ).to receive( :status_of_request ).and_return( :pending )
         allow( connector ).to receive( :latest_request ).and_return(
-          [ prev_request_data, { on_failure: prev_on_failure} ]
+          Net::EM_Connector.RequestCall(
+            prev_request_data, { on_failure: prev_on_failure}
+          )
         )
       end
 
@@ -99,14 +101,16 @@ module ClientForPoslynx
       before do
         allow( connector ).to receive( :connection_status ).and_return( :connected )
         allow( connector ).to receive( :status_of_request ).and_return( :pending )
-        allow( connector ).to receive( :latest_request ).and_return( [
-          prev_request_data,
-          {
-            on_response:    prev_on_response,
-            on_failure:    prev_on_failure,
-            on_detached: prev_on_detached,
-          }
-        ] )
+        allow( connector ).to receive( :latest_request ).and_return(
+          Net::EM_Connector.RequestCall(
+            prev_request_data,
+            {
+              on_response: prev_on_response,
+              on_failure:  prev_on_failure,
+              on_detached: prev_on_detached,
+            }
+          )
+        )
       end
       let( :prev_request_data ) { Data::Requests::PinPadInitialize.new }
       let( :prev_on_response   ) { double(:prev_on_response,   call: nil) }

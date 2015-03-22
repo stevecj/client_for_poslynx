@@ -3,6 +3,7 @@
 require_relative 'em_connector/handles_connection'
 require_relative 'em_connector/connection_handler'
 require_relative 'em_connector/event_dispatcher'
+require_relative 'em_connector/request_call'
 
 module ClientForPoslynx
   module Net
@@ -192,7 +193,7 @@ module ClientForPoslynx
           opts[:on_failure].call if opts[:on_failure]
           return
         end
-        self.latest_request = [request_data, opts]
+        self.latest_request = EM_Connector.RequestCall( request_data, opts )
         state.status_of_request = :pending
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
           connection, opts
@@ -233,7 +234,7 @@ module ClientForPoslynx
           opts[:on_failure].call if opts[:on_failure]
           return
         end
-        self.latest_request[1] = opts
+        self.latest_request = EM_Connector.RequestCall(latest_request.request_data, opts)
         state.status_of_request = :pending
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
           connection, opts
@@ -246,7 +247,10 @@ module ClientForPoslynx
         @state ||= State.new
       end
 
-      attr_writer :latest_request
+      def latest_request=(value)
+        args = Array(value)
+        @latest_request = EM_Connector.RequestCall( *args )
+      end
 
       def make_initial_connection(opts)
         state.connection_status = :connecting
