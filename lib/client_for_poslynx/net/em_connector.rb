@@ -163,10 +163,10 @@ module ClientForPoslynx
       # * <tt>:on_completed</tt> - An object to receive
       #   <tt>#call</tt> when finished disconnecting.
       def disconnect(result_callbacks={})
-        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
+        result_callbacks = EM_Connector.CallbackMap( result_callbacks )
         if connection_status == :connected
           connection.event_dispatcher =
-            EM_Connector::EventDispatcher.for_disconnect(connection, result_callbacks)
+            EM_Connector::EventDispatcher.for_disconnect( connection, result_callbacks )
           state.connection_status = :disconnecting
           connection.close_connection
         else
@@ -205,7 +205,7 @@ module ClientForPoslynx
       #   while the request is pending. <tt>EMSession</tt> may
       #   invoke an <tt>:on_detached</tt> callback, for example.
       def send_request(request_data, result_callbacks={})
-        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
+        result_callbacks = EM_Connector.CallbackMap( result_callbacks )
         unless connection_status == :connected
           result_callbacks.call :on_failure
           return
@@ -247,12 +247,12 @@ module ClientForPoslynx
       # <tt>:got_response</tt> before the invocation, then it is
       # reverted to # <tt>:pending</tt>.
       def get_response(result_callbacks={})
-        result_callbacks = EM_Connector.CallbackMap(result_callbacks)
+        result_callbacks = EM_Connector.CallbackMap( result_callbacks )
         unless connection_status == :connected && (status_of_request == :pending || status_of_request == :got_response)
           result_callbacks.call :on_failure
           return
         end
-        self.latest_request = EM_Connector.RequestCall(latest_request.request_data, result_callbacks)
+        self.latest_request = EM_Connector.RequestCall( latest_request.request_data, result_callbacks )
         state.status_of_request = :pending
         connection.event_dispatcher = EM_Connector::EventDispatcher.for_send_request(
           connection, result_callbacks
