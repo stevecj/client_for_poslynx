@@ -67,11 +67,11 @@ module ClientForPoslynx
       # <tt>RequestError</tt> exception will be raised.
       #
       # If another session attempts to supplant this request, but
-      # the response to this request is still received, then the
-      # response is returned as normal, but this session's status
-      # is changed to detached, and any subsequent request
-      # attempts made in this session will result in
-      # <tt>RequestError</tt> being raised.
+      # the response to this request is subsequently received,
+      # then the response is returned as normal, but this
+      # session's status is changed to detached, and any
+      # subsequent request attempts made in this session will
+      # result in <tt>RequestError</tt> being raised.
       #
       # If another session is already waiting for a response,
       # then this will attempt to usurp or supplant the other
@@ -138,38 +138,50 @@ module ClientForPoslynx
       end
 
       def on_response_handler(overlaps_request)
-        if overlaps_request
-          overlapped_request_data = overlaps_request && overlaps_request.request_data
-          overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
-          ->(response_data) {
-            if overlapped_request_data.potential_response?( response_data )
-              overlapped_request_callbacks.call :on_detached
-              overlapped_request_callbacks.call :on_response, response_data
-              _get_response
-            else
-              overlapped_request_callbacks.call :on_failure
-              dispatch fiber.resume( [true, response_data] )
-            end
-          }
-        else
-          ->(response_data) {
+        overlaps_request ?
+          on_response_handler_with_overlap( overlaps_request ) :
+          simple_on_response_handler
+      end
+
+      def on_response_handler_with_overlap(overlaps_request)
+        overlapped_request_data = overlaps_request && overlaps_request.request_data
+        overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
+        ->(response_data) {
+          if overlapped_request_data.potential_response?( response_data )
+            overlapped_request_callbacks.call :on_detached
+            overlapped_request_callbacks.call :on_response, response_data
+            _get_response
+          else
+            overlapped_request_callbacks.call :on_failure
             dispatch fiber.resume( [true, response_data] )
-          }
-        end
+          end
+        }
+      end
+
+      def simple_on_response_handler
+        ->(response_data) {
+          dispatch fiber.resume( [true, response_data] )
+        }
       end
 
       def on_failure_handler(overlaps_request)
-        if overlaps_request
-          overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
-          ->() {
-            overlapped_request_callbacks.call :on_failure if overlaps_request
-            dispatch fiber.resume( [false, RequestError.new] )
-          }
-        else
-          ->() {
-            dispatch fiber.resume( [false, RequestError.new] )
-          }
-        end
+        overlaps_request ?
+          on_failure_handler_with_overlap( overlaps_request ) :
+          simple_on_failure_handler
+      end
+
+      def on_failure_handler_with_overlap(overlaps_request)
+        overlapped_request_callbacks = overlaps_request && overlaps_request.result_callbacks
+        ->() {
+          overlapped_request_callbacks.call :on_failure if overlaps_request
+          dispatch fiber.resume( [false, RequestError.new] )
+        }
+      end
+
+      def simple_on_failure_handler
+        ->() {
+          dispatch fiber.resume( [false, RequestError.new] )
+        }
       end
 
       def detach!
