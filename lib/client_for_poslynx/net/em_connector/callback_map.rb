@@ -2,7 +2,6 @@
 
 module ClientForPoslynx
   module Net
-
     class EM_Connector
 
       def self.CallbackMap(*args)

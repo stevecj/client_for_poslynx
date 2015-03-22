@@ -10,7 +10,7 @@ module ClientForPoslynx
     }
     let( :connector ) { double(
       :connector,
-      status_of_request: nil,
+      request_pending?: false,
       latest_request: nil,
     ) }
 
@@ -69,7 +69,7 @@ module ClientForPoslynx
 
     context "when an existing pin pad reset request is pending" do
       before do
-        allow( connector ).to receive( :status_of_request ).and_return( :pending )
+        allow( connector ).to receive( :request_pending? ).and_return( true )
         allow( connector ).to receive( :latest_request ).and_return(
           Net::EMC.RequestCall(
             prev_request_data, { on_failure: prev_on_failure}
@@ -100,7 +100,7 @@ module ClientForPoslynx
     context "when a request is pending" do
       before do
         allow( connector ).to receive( :connection_status ).and_return( :connected )
-        allow( connector ).to receive( :status_of_request ).and_return( :pending )
+        allow( connector ).to receive( :request_pending? ).and_return( true )
         allow( connector ).to receive( :latest_request ).and_return(
           Net::EMC.RequestCall(
             prev_request_data,

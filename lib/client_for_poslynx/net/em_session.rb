@@ -81,7 +81,7 @@ module ClientForPoslynx
       # exception.
       def request(data)
         raise RequestError if status == :detached
-        if connector.status_of_request == :pending
+        if connector.request_pending?
           pending_request_data = connector.latest_request.request_data
           pending_callbacks = connector.latest_request.result_callbacks
           if Data::Requests::PinPadReset === data && Data::Requests::PinPadReset === pending_request_data

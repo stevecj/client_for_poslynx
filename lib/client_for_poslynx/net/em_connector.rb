@@ -10,6 +10,7 @@ module ClientForPoslynx
   end
 end
 
+require_relative 'em_connector/connector_state'
 require_relative 'em_connector/handles_connection'
 require_relative 'em_connector/connection_handler'
 require_relative 'em_connector/event_dispatcher'
@@ -30,9 +31,7 @@ module ClientForPoslynx
     # with connections since that's the only context in which
     # Event Manager connections are applicable.
     class EM_Connector
-
-      class State < Struct.new( :connection, :connection_status, :status_of_request )
-      end
+      extend Forwardable
 
       # Creates a new
       # <tt>ClientForPoslynx::Net::EM_Connector</tt>
@@ -90,9 +89,23 @@ module ClientForPoslynx
       # The current connection status. One of <tt>:initial</tt>,
       # <tt>:connecting</tt>, <tt>:connected</tt>,
       # <tt>:disconnecting</tt>, <tt>:disconnected</tt>.
-      def connection_status
-        state.connection_status
-      end
+      def_delegator :state, :connection_status
+
+      # True when no connection attempt has been initiated yet.
+      def_delegator :state, :connection_initial?
+
+      # True when a connection attempt is in progress.
+      def_delegator :state, :connecting?
+
+      # True when currently connected.
+      def_delegator :state, :connected?
+
+      # True when disconnection is in progress.
+      def_delegator :state, :disconnecting?
+
+      # True when a opening a connection has been previously
+      # attempted or successful, and not currently connected.
+      def_delegator :state, :disconnected?
 
       # An instance of <tt>EM_Connector::RequestCall</tt>
       # containing the request data and result callbacks from the
@@ -103,9 +116,21 @@ module ClientForPoslynx
       # The current <tt>#send_request</tt> status. One of
       # <tt>:initial</tt>, <tt>:pending</tt>,
       # <tt>:got_response</tt>, <tt>:failed</tt>.
-      def status_of_request
-        state.status_of_request
-      end
+      def_delegator :state, :status_of_request
+
+      # True when no request-send has been initiated yet.
+      def_delegator :state, :request_initial?
+
+      # True when a request-send is in progress.
+      def_delegator :state, :request_pending?
+
+      # True when a response was receied from the most recently
+      # attempted request-send.
+      def_delegator :state, :got_response?
+
+      # True when the most recently attempted request-send
+      # resulted in failure.
+      def_delegator :state, :request_failed?
 
       # The connection handler class to be passed as the handler
       # argument to <tt>EM::connect</tt>.
@@ -145,12 +170,11 @@ module ClientForPoslynx
       #   <tt>#call</tt> when the connection attempt fails.
       def connect(result_callbacks={})
         result_callbacks = EMC.CallbackMap(result_callbacks)
-        case connection_status
-        when :initial
+        if connection_initial?
           make_initial_connection result_callbacks
-        when :connected
+        elsif connected?
           result_callbacks.call :on_success
-        when :connecting
+        elsif connecting?
           piggyback_connect result_callbacks
         else
           reconnect result_callbacks
@@ -174,7 +198,7 @@ module ClientForPoslynx
       #   <tt>#call</tt> when finished disconnecting.
       def disconnect(result_callbacks={})
         result_callbacks = EMC.CallbackMap( result_callbacks )
-        if connection_status == :connected
+        if connected?
           connection.event_dispatcher =
             EMC::EventDispatcher.for_disconnect( connection, result_callbacks )
           state.connection_status = :disconnecting
@@ -216,7 +240,7 @@ module ClientForPoslynx
       #   invoke an <tt>:on_detached</tt> callback, for example.
       def send_request(request_data, result_callbacks={})
         result_callbacks = EMC.CallbackMap( result_callbacks )
-        unless connection_status == :connected
+        unless connected?
           result_callbacks.call :on_failure
           return
         end
@@ -258,7 +282,7 @@ module ClientForPoslynx
       # reverted to # <tt>:pending</tt>.
       def get_response(result_callbacks={})
         result_callbacks = EMC.CallbackMap( result_callbacks )
-        unless connection_status == :connected && (status_of_request == :pending || status_of_request == :got_response)
+        unless connected? && ( request_pending? || got_response? )
           result_callbacks.call :on_failure
           return
         end
@@ -306,7 +330,6 @@ module ClientForPoslynx
           connection, response_callbacks
         )
       end
-
     end
 
   end
