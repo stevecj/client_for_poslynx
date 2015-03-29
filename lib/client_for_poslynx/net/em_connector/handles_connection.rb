@@ -22,6 +22,15 @@ module ClientForPoslynx
         end
 
         def connection_completed
+          if connector_state.encryption == :use_ssl
+            start_tls
+          else
+            connector_state.connection_status = :connected
+            event_dispatcher.event_occurred :connection_completed
+          end
+        end
+
+        def ssl_handshake_completed
           connector_state.connection_status = :connected
           event_dispatcher.event_occurred :connection_completed
         end

@@ -24,6 +24,7 @@ module ClientForPoslynx
     context "actions and events" do
       subject { described_class.new(
         :the_server, :the_port,
+        encryption: encryption,
         em_system: em_system,
         handler: handler_class
       ) }
@@ -34,6 +35,8 @@ module ClientForPoslynx
       end }
 
       describe '#connect' do
+        context "without SSL" do
+        let( :encryption ) { :none }
         before do
           @handler_instance = nil
           allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
@@ -200,10 +203,116 @@ module ClientForPoslynx
           end
 
         end
+        end
 
+        context "with SSL" do
+          let( :encryption ) { :use_ssl }
+          before do
+            @handler_instance = nil
+            allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
+              @handler_instance = handler.new( *handler_args )
+              allow( @handler_instance ).to receive( :start_tls )
+              nil
+            end
+          end
+
+          let( :on_success ) { double(:on_success, call: nil) }
+          let( :on_failure ) { double(:on_failure, call: nil) }
+
+          context "initial connection" do
+            before do
+              subject.connect on_success: on_success, on_failure: on_failure
+            end
+
+            it "tries to open an EM connection using the connector's handler class" do
+              expect( em_system ).to have_received( :connect ) do |server, port, handler, *handler_args|
+                expect( server ).to eq( :the_server )
+                expect( port ).to eq( :the_port )
+                expect( handler ).to eq( handler_class )
+              end
+            end
+
+            it "exposes the handler instance" do
+              expect( subject.connection ).to eq( @handler_instance )
+            end
+
+            it "sets the connection status to :connecting" do
+              expect( subject.connection_status ).to eq( :connecting )
+            end
+
+            context "when the EM HTTP connection is completed" do
+              before do
+                @handler_instance.connection_completed
+              end
+
+              it "tries to initiate TLS/SSL on the connection" do
+                expect( @handler_instance ).to have_received( :start_tls )
+              end
+
+              context "when the SSL handshake is completed" do
+                before do
+                  @handler_instance.ssl_handshake_completed
+                end
+
+                it "reports success and not failure" do
+                  expect( on_success ).to     have_received( :call )
+                  expect( on_failure ).not_to have_received( :call )
+                end
+
+                it "sets the connection status to :connected" do
+                  expect( subject.connection_status ).to eq( :connected )
+                end
+              end
+
+              context "when the HTTP connection is lost" do
+                before do
+                  @handler_instance.unbind
+                end
+
+                it "reports failure and not success" do
+                  expect( on_failure ).to     have_received(:call)
+                  expect( on_success ).not_to have_received(:call)
+                end
+
+                it "sets the connection status to :disconnected" do
+                  expect( subject.connection_status ).to eq( :disconnected )
+                end
+              end
+
+            end
+
+            context "when the EM HTTP connection attempt fails" do
+              before do
+                @handler_instance.unbind
+              end
+
+              it "reports failure and not success" do
+                expect( on_failure ).to     have_received(:call)
+                expect( on_success ).not_to have_received(:call)
+              end
+
+              it "sets the connection status to :disconnected" do
+                expect( subject.connection_status ).to eq( :disconnected )
+              end
+            end
+
+            context "following successful connection and SSL handshake" do
+              before do
+                @handler_instance.connection_completed
+                @handler_instance.ssl_handshake_completed
+              end
+
+              it "does not report failure later when subsequently disconnected" do
+                @handler_instance.unbind
+                expect( on_failure ).not_to have_received(:call)
+              end
+            end
+          end
+        end
       end
 
       context "when an open connection is lost or remotely disconnected" do
+        let( :encryption ) { :none }
         before do
           @handler_instance = nil
           allow( em_system ).to receive( :connect ) do |server, port, handler, *handler_args|
@@ -221,6 +330,7 @@ module ClientForPoslynx
       end
 
       describe '#disconnect' do
+        let( :encryption ) { :none }
         let( :on_completed ) { double(:on_completed, call: nil) }
 
         context "when has never been connected" do
@@ -295,6 +405,7 @@ module ClientForPoslynx
       end
 
       describe '#send_request' do
+        let( :encryption ) { :none }
         let( :opts_for_send_request ) {
           { on_response: on_response, on_failure: on_failure }
         }
@@ -364,6 +475,7 @@ module ClientForPoslynx
       end
 
       describe '#get_response' do
+        let( :encryption ) { :none }
         let( :opts_for_get_response ) {
           { on_response: on_response, on_failure: on_failure }
         }

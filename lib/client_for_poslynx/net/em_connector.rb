@@ -42,6 +42,10 @@ module ClientForPoslynx
       # reconnecting to the poslynx lane as needed.
       #
       # ==== Options
+      # * <tt>:encryption<tt> - <tt>:use_ssl</tt> if SSL
+      #   if the connection should be encrypted using SSL.
+      #   <tt>:none</tt> if the connection should not be
+      #   encrypted. Defaults to <tt>:none</tt>.
       # * <tt>:handler<tt> - The class given as the handler
       #   argument to the <tt>::connect</tt> call to the Event
       #   Machine system (normally <tt>::EM</tt>).
@@ -67,6 +71,7 @@ module ClientForPoslynx
       def initialize(server, port, opts={})
         @server = server
         @port   = port
+        state.encryption = opts.fetch( :encryption, :none )
         @handler_class = opts.fetch( :handler,   EMC::ConnectionHandler )
         @em_system     = opts.fetch( :em_system, ::EM )
         state.connection_status ||= :initial
@@ -78,6 +83,9 @@ module ClientForPoslynx
 
       # The server port through which to connected.
       attr_reader :port
+
+      # The encryption mode <tt>:use_ssl</tt> or <tt>:none</tt>
+      def_delegator :state, :encryption
 
       # The connection handler instance (connection) after the
       # first call to <tt>#connect</tt>.  It will be an instance

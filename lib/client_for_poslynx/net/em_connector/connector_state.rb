@@ -4,7 +4,7 @@ module ClientForPoslynx
   module Net
     class EM_Connector
 
-      class State < Struct.new( :connection, :connection_status, :status_of_request )
+      class State < Struct.new( :encryption, :connection, :connection_status, :status_of_request )
 
         def connection_initial? ; connection_status == :initial       ; end
         def connecting?         ; connection_status == :connecting    ; end
