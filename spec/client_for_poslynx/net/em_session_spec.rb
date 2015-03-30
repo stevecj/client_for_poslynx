@@ -269,6 +269,21 @@ module ClientForPoslynx
         end
         expect( exec_result ).to eq( :the_result )
       end
+
+      it "gets the exception raised during the code execution" do
+        exception = nil
+        subject.execute do |s|
+          begin
+            subject.exec_dissociated do
+              raise 'the error'
+            end
+          rescue => e
+            exception = e
+          end
+        end
+        expect( exception ).to be_kind_of( StandardError )
+        expect( exception.message ).to eq( 'the error' )
+      end
     end
 
   end

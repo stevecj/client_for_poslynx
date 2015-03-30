@@ -120,7 +120,9 @@ module ClientForPoslynx
       # code within the block since those methods should only be
       # called from code running in the main event loop thread.
       def exec_dissociated(&block)
-        Fiber.yield [:_exec_dissociated, block]
+        was_successful, resp_data_or_ex = Fiber.yield( [:_exec_dissociated, block] )
+        raise resp_data_or_ex unless was_successful
+        resp_data_or_ex
       end
 
       private
@@ -214,10 +216,18 @@ module ClientForPoslynx
       end
 
       def _exec_dissociated op
+        wrapped_op = ->() {
+          begin
+            result = op.call
+            [true, result]
+          rescue => ex
+            [false, ex]
+          end
+        }
         callback = ->(result) do
           dispatch fiber.resume result
         end
-        em_system.defer op, callback
+        em_system.defer wrapped_op, callback
       end
     end
 
