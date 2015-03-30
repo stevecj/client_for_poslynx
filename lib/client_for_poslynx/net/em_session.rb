@@ -151,8 +151,8 @@ module ClientForPoslynx
             dispatch fiber.resume( [false, RequestError.new] )
           }
         )
-      rescue StandardError => e
-        dispatch fiber.resume( [false, e] )
+      rescue => ex
+        dispatch fiber.resume( [false, ex] )
       end
 
       def _get_response
