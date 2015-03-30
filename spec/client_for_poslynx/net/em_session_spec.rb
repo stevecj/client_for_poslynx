@@ -286,6 +286,28 @@ module ClientForPoslynx
       end
     end
 
+    context "sleeping" do
+      before do
+        @run_sequence = []
+        allow( em_system ).to receive( :add_timer ) do |delay_time, callback|
+          @run_sequence << [:add_timer, delay_time]
+          callback.call
+        end
+      end
+
+      it "adds an EM timer, and resumes after the timer callback fires" do
+        subject.execute do |s|
+          s.sleep 5.5
+          @run_sequence << :after_timer
+        end
+
+        expect( @run_sequence ).to eq( [
+          [:add_timer, 5.5],
+          :after_timer
+        ] )
+      end
+    end
+
   end
 
 end

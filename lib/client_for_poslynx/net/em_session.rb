@@ -125,6 +125,12 @@ module ClientForPoslynx
         resp_data_or_ex
       end
 
+      # Returns control to EventMachine, and returns control to
+      # the session code after the given delay-time in seconds.
+      def sleep(delay_time)
+        Fiber.yield [:_sleep, delay_time]
+      end
+
       private
 
       attr_writer :connector, :status
@@ -228,6 +234,13 @@ module ClientForPoslynx
           dispatch fiber.resume result
         end
         em_system.defer wrapped_op, callback
+      end
+
+      def _sleep(delay_time)
+        callback = ->() {
+          dispatch fiber.resume
+        }
+        em_system.add_timer delay_time, callback
       end
     end
 
