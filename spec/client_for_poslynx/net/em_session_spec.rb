@@ -6,13 +6,14 @@ module ClientForPoslynx
 
   describe Net::EM_Session do
     subject {
-      described_class.new( connector )
+      described_class.new( connector, em_system: em_system )
     }
     let( :connector ) { double(
       :connector,
       request_pending?: false,
       latest_request: nil,
     ) }
+    let( :em_system ) { double(:em_system) }
 
     it "allows making a request and returning the response" do
       expect( connector ).to receive( :connect ) do |opts|
@@ -248,6 +249,25 @@ module ClientForPoslynx
           expect( prev_on_failure ).to have_received( :call )
           expect( exception ).to be_kind_of( Net::EM_Session::RequestError )
         end
+      end
+    end
+
+    context "executing a dissociated code" do
+      before do
+        allow( em_system ).to receive( :defer ) do |block, callback|
+          result = block.call
+          callback.call result
+        end
+      end
+
+      it "gets the value returned from the code execution" do
+        exec_result = nil
+        subject.execute do |s|
+          exec_result = subject.exec_dissociated {
+            :the_result
+          }
+        end
+        expect( exec_result ).to eq( :the_result )
       end
     end
 

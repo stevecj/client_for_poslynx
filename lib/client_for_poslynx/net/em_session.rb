@@ -41,10 +41,18 @@ module ClientForPoslynx
 
       attr_reader :status
 
+      attr_reader :em_system
+
       # Builds a new EM_Session instance attached to the given
       # Event Machine connector.
-      def initialize(connector)
+      #
+      # ==== Options
+      # * <tt>:em_system</tt> - The event machine system that
+      #   will be called on for operations such as adding timers
+      #   and deferring actions.
+      def initialize(connector, opts={})
         self.connector = connector
+        @em_system = opts.fetch( :em_system, ::EM )
         self.status = :initialized
       end
 
@@ -97,6 +105,22 @@ module ClientForPoslynx
         end
         raise resp_data_or_ex unless was_successful
         resp_data_or_ex
+      end
+
+      # Given a block argument, returns control to EventMachine,
+      # executes the block in a separate thread, waits for the
+      # thread to complete, and then returns the value returned
+      # by the block.
+      #
+      # This is implemented behind the scenes using
+      # EventMachine::defer and has the same considerations and
+      # caveats.
+      #
+      # Note that metods of the session should not be called by
+      # code within the block since those methods should only be
+      # called from code running in the main event loop thread.
+      def exec_dissociated(&block)
+        Fiber.yield [:_exec_dissociated, block]
       end
 
       private
@@ -187,6 +211,13 @@ module ClientForPoslynx
       def detach!
         self.connector = nil
         self.status = :detached
+      end
+
+      def _exec_dissociated op
+        callback = ->(result) do
+          dispatch fiber.resume result
+        end
+        em_system.defer op, callback
       end
     end
 
