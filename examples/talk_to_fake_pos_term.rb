@@ -1,15 +1,20 @@
 # Given that fake_pos_terminal is running on the local system and
-# listening on port 3010, this example will display a message
-# with buttons on the terminal, and after a button is selected,
-# will display info from the button response.
+# listening on port 3010, this example will execute the following
+# workflow...
 #
-# This example will work equally well with an actual POSLynx and
-# PIN pad if you change the IP address, port number, SSL, and
-# client MAC values as appropriate.
+# 1. Display a message on the PIN pad with buttons.
+# 2. After a button is selected on the PIN pad, display a message
+#    showing info about the button response for 5 seconds.
+# 3. Reset the PIN pad.
+#
+# This example will also work using an actual POSLynx and PIN pad
+# if the IP address, port number, encryption, and client MAC
+# values are changed appropriately.
 
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 3010
-#TODO: Oops. We don't have SSL support built into EM_Connector yet.
+# :none for no encryption. :use_ssl for SSL encryption.
+ENCRYPTION = :none
 CLIENT_MAC = 'whatever'
 
 
@@ -19,7 +24,7 @@ require 'client_for_poslynx'
 include ClientForPoslynx::Net
 include ClientForPoslynx::Data
 
-connector = EM_Connector.new(SERVER_IP, SERVER_PORT)
+connector = EM_Connector.new(SERVER_IP, SERVER_PORT, encryption: ENCRYPTION)
 
 EventMachine.run do
 
@@ -40,7 +45,13 @@ EventMachine.run do
         "Got button response: #{response.button_response}"
       ]
     }
+    s.request request_data
 
+    s.sleep 5
+
+    request_data = Requests::PinPadReset.new.tap{ |r|
+      r.client_mac = CLIENT_MAC
+    }
     s.request request_data
 
     EventMachine.stop_event_loop
