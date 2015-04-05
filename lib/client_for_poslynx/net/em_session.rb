@@ -88,7 +88,9 @@ module ClientForPoslynx
       # this call will raise a <tt>ConflictingRequestError</tt>
       # exception.
       def request(data)
-        raise RequestError if status == :detached
+        if status == :detached
+          raise RequestError, "Session cannot make requests because it is detached"
+        end
         if connector.request_pending?
           pending_request_data = connector.latest_request.request_data
           pending_callbacks = connector.latest_request.result_callbacks
@@ -116,7 +118,7 @@ module ClientForPoslynx
       # EventMachine::defer and has the same considerations and
       # caveats.
       #
-      # Note that metods of the session should not be called by
+      # Note that methods of the session should not be called by
       # code within the block since those methods should only be
       # called from code running in the main event loop thread.
       def exec_dissociated(&block)
