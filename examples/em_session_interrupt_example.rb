@@ -1,12 +1,5 @@
-# Given that fake_pos_terminal is running on the local system and
-# listening on port 3010, this example will execute the following
-# workflow...
-#
-# 1. Display a message on the PIN pad with buttons.
-# 2. After a button is selected on the PIN pad, display a message
-#    showing info about the button response for 5 seconds.
-# 3. Reset the PIN pad.
-#
+require 'client_for_poslynx'
+
 # This example will also work using an actual POSLynx and PIN pad
 # if the IP address, port number, encryption, and client MAC
 # values are changed appropriately.
