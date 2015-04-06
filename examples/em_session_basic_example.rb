@@ -1,3 +1,5 @@
+require 'client_for_poslynx'
+
 # Given that fake_pos_terminal is running on the local system and
 # listening on port 3010, this example will execute the following
 # workflow...
