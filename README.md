@@ -75,8 +75,7 @@ printing or display.
 The `client_for_poslynx` gem includes a script that acts as a
 fake POSLynx + PIN Pad.  This is useful when you are working
 without access to an actual POSLynx and PIN Pad, and want to test
-your client code and try out workflows.  This script will probably be extracted into a
-separate gem soon.
+your client code and try out workflows.
 
 ## Usage
 
@@ -113,37 +112,41 @@ call the non-blocking `Session#sleep` (runs via
 When one session is in progress, and a new session makes a
 request, the new request will attempt to override any pending
 request of the first session, and to "detach" the other session
-so that any subsequent of its subsequent request attemtps will
-be rejected and fail with exceptions.
+so that any of its subsequent request attemtps will be rejected
+and fail with an exception.
 
 In order to avoid race conditions and to ensure that every
 response that is received is returned to the session that made
 the corresponding request, the following rules apply.
 
-1. If one session has a pending `PinPadReset` (`PPRESET`)
+1. If one session has a pending request, a new session makes a
+   different kind of request, and then a response to the
+   **second** request is received, then the first session
+   receives an exception, and the second session will have the
+   response reurned.
+2. If one session has a pending request, a new session makes a
+   different kind of request, and then a response to the
+   **first** request is received, then the first session will
+   have that response returned and will be detached.  The second
+   session continues waiting for the subsequent response (to its
+   request).
+2. If one session has a pending `PinPadReset` (`PPRESET`)
    request, and a new session makes a `PinPadReset` request, then
    the first session receives an exception, and the response is
    returned to the second session.
-2. If one session has a pending request, a new session makes a
-   different kind of request, and then a response to the first
-   request is received, then the first session will have that
-   response returned and will be detached.  The second session
-   continues waiting for the subsequent response (to its
-   request).
-3. If one session has a pending request, a new session makes a
-   different kind of request, and then a response to the second
-   request is received, then the first session receives an
-   exception, and the second session will have the response
-   reurned.
 4. If one session makes a request other than a `PinPadReset`,
    and a new session makes a request of the same type, then the
    new session's request fails immediately with an exception.
 
 An important consequence of the rules above is that if the first
 request made by a new session is a `PinPadReset`, then it will
-be able to successfully interrupt any existing session.  If it
-starts with any other kind of request, however, then it has the
-potential to fail as described in rule #4.
+always be able to successfully interrupt any existing session.
+If it starts with any other kind of request, however, then it has
+the potential to fail as described in rule #4.
+
+For that reason, you should generally start any session with a
+Pin Pad Reset request, and only do otherwise if you have
+considered the consequences with respect to the rules above.
 
 ### Using the `EM_Connector` adapter
 
@@ -158,7 +161,7 @@ The jobs of `EM_Connector` are...
    making a request via that connection.
 2. Assist in keeping track of the state of pending requests.
 3. Provide a simple API for specifying callbacks to specific
-   connection and send-request attempts.
+   attempts to connection or send a request.
 
 ### The `POSLynx` protocol for EventManager
 
@@ -201,8 +204,9 @@ To stop the script, send an interrupt signal by pressing Ctrl+C.
 
 ## Known Limitations
 
-* Only a subset of the possible messages and elements is supported.
-  __More will be added. Contributions are welcome and encouraged. :)__
+* Only a subset of the possible messages and elements is
+  supported.  __More might be added. Contributions are welcome
+  and encouraged. :)__
 
 ## Installation
 
