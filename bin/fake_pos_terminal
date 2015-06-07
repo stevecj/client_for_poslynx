@@ -16,15 +16,17 @@ $*.replace []
 # for --help or because an unrecognized option was given.
 show_usage = option_args.length > 0
 
-# Should have exactly 1 value argument for the port number.
-show_usage ||= value_args.length != 1
+# One required value argument for the port number, and one optional
+# value argument for the local IP address.
+show_usage ||= value_args.length < 1 || value_args.length > 2
 
 # Port number should consist of 1 or more digits
 show_usage ||= value_args.first !~ /\A\d+\z/
 
 if show_usage
   puts
-  puts "Usage: client_for_poslynx <port-number>"
+  puts "Usage: client_for_poslynx <port-number> [<bind-to-ip-address>]"
+  puts "Usage: client_for_poslynx --help"
   puts
   puts "Runs a fake POS terminal that behaves like a POSLynx unit with"
   puts "an attached PIN pad. It accepts connections from a client on"
@@ -34,8 +36,14 @@ if show_usage
   puts "This allows you to manually test or demonstrate your client"
   puts "software without having access to actual POSLynx hardware."
   puts
+  puts " port-number        : The IP port on which to listen."
+  puts " bind-to-ip-address : The IP address on which to listen."
+  puts "                      Defaults to 127.0.0.1 (localhost)."
+  puts "                      Usually specify 0.0.0.0 to allow a"
+  puts "                      connection from another computer"
 else
   port_number = (value_args.first || 0).to_i
+  bind_to_ip_address = value_args[1] || '127.0.0.1'
   require 'client_for_poslynx/fake_pos_terminal'
-  ClientForPoslynx::FakePosTerminal.start port_number
+  ClientForPoslynx::FakePosTerminal.start port_number, bind_to_ip_address
 end

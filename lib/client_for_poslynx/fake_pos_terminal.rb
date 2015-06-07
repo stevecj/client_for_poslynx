@@ -16,7 +16,7 @@ module ClientForPoslynx
   # behaves similarly to a POSLynx attached PIN pad.
   module FakePosTerminal
 
-    def self.start(port_number)
+    def self.start(port_number, bind_to_ip_address)
       context = self::Context.new
       context.port_number = port_number
 
@@ -26,7 +26,7 @@ module ClientForPoslynx
 
       EM.run do
         EM.start_server(
-          "127.0.0.1", port_number, self::NetHandler,
+          bind_to_ip_address, port_number, self::NetHandler,
           user_interface
         )
 
