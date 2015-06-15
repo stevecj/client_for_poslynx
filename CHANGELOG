@@ -1,48 +1,8 @@
-Version 0.0.1
-- Initial development
+Version 1.0.0
+- Fake POS terminal script accepts local IP address parameter.
 
-Version 0.1.0
-- Initial release
-
-Version 0.1.1
-- Add CHANGELOG file
-
-Version 0.2.0
-- Improve API for specifying attribute element mappings.
-
-Version 0.2.1
-- Relax Nokogiri gem version requirement.
-
-Version 0.2.2
-- Specify Ruby version requirement of 1.9.3 or greater.
-
-Version 0.2.3
-- Fix bug: Fake terminal script crashes with stak overflow when
-  a single text value is supplied.
-
-Version 0.2.4
-- Fix bug: Fake terminal script crashes during user interaction
-  for a debit sale request without a specified cash back amount.
-
-Version 0.2.5
-- Introduce experimental signature image parsing and conversion
-  to SVG.
-- Fix bug: New format of POSLynx response message XML was causing
-  client to hang.
-
-Version 0.2.6
-- Add enhanced-format signature data handling.
-- Fix misconception about signed number representation in signa-
-  ture image data.
-- Bring signature image handling out of experimental status.
-
-Version 0.3.0
-- Allow user to cancel waiting for reply in
-  poslynx_client_console.
-- Support SSL connections from poslynx_client_console.
-- Change word separators in poslynx_client_console from under-
-  scores to dashes.
-- Fake Poslynx includes signature image data in response.
+Version 1.0.0.pre
+- Add EM_connector adapter and EM_Session adapter
 
 Version 0.9.0
 - Add a network client in the form of an EventManager protocol.
@@ -55,3 +15,49 @@ Version 0.9.0
 - Overhaul the fake pos terminal script to be based on
   EventMachine and to allow request processing to be interrupted
   by the receipt of a new request.
+
+Version 0.3.0
+- Allow user to cancel waiting for reply in
+  poslynx_client_console.
+- Support SSL connections from poslynx_client_console.
+- Change word separators in poslynx_client_console from under-
+  scores to dashes.
+- Fake Poslynx includes signature image data in response.
+
+Version 0.2.6
+- Add enhanced-format signature data handling.
+- Fix misconception about signed number representation in signa-
+  ture image data.
+- Bring signature image handling out of experimental status.
+
+Version 0.2.5
+- Introduce experimental signature image parsing and conversion
+  to SVG.
+- Fix bug: New format of POSLynx response message XML was causing
+  client to hang.
+
+Version 0.2.4
+- Fix bug: Fake terminal script crashes during user interaction
+  for a debit sale request without a specified cash back amount.
+
+Version 0.2.3
+- Fix bug: Fake terminal script crashes with stak overflow when
+  a single text value is supplied.
+
+Version 0.2.2
+- Specify Ruby version requirement of 1.9.3 or greater.
+
+Version 0.2.1
+- Relax Nokogiri gem version requirement.
+
+Version 0.2.0
+- Improve API for specifying attribute element mappings.
+
+Version 0.1.1
+- Add CHANGELOG file
+
+Version 0.1.0
+- Initial release
+
+Version 0.0.1
+- Initial development
