@@ -252,7 +252,7 @@ module ClientForPoslynx
       end
     end
 
-    context "executing a dissociated code" do
+    context "executing a dissociated block" do
       before do
         allow( em_system ).to receive( :defer ) do |block, callback|
           result = block.call
@@ -284,6 +284,27 @@ module ClientForPoslynx
         expect( exception ).to be_kind_of( StandardError )
         expect( exception.message ).to eq( 'the error' )
       end
+    end
+
+    context "executing a nested dissociated block" do
+      it "defers execution of the outer code block only" do
+        (
+          allow( em_system ).
+            to receive( :defer ) do |block, callback|
+              result = block.call
+              callback.call result
+            end
+        ).once
+
+        exec_result = nil
+        subject.execute do |s|
+          subject.exec_dissociated {
+            exec_result = subject.exec_dissociated { :the_result }
+          }
+        end
+        expect( exec_result ).to eq( :the_result )
+      end
+
     end
 
     context "sleeping" do

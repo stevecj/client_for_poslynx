@@ -118,13 +118,29 @@ module ClientForPoslynx
       # EventMachine::defer and has the same considerations and
       # caveats.
       #
+      # When a call to #exec_dissociated is nested within a
+      # block passed to anothet call, only the outermost invo-
+      # cation is deferred, and the inner call executes in the
+      # same thread as the outer call.
+      #
       # Note that methods of the session should not be called by
       # code within the block since those methods should only be
       # called from code running in the main event loop thread.
       def exec_dissociated(&block)
-        was_successful, resp_data_or_ex = Fiber.yield( [:_exec_dissociated, block] )
-        raise resp_data_or_ex unless was_successful
-        resp_data_or_ex
+        @currently_dissociated ||= false
+
+        if @currently_dissociated
+          block.call
+        else
+          begin
+            @currently_dissociated = true
+            was_successful, resp_data_or_ex = Fiber.yield( [:_exec_dissociated, block] )
+            raise resp_data_or_ex unless was_successful
+            resp_data_or_ex
+          ensure
+            @currently_dissociated = false
+          end
+        end
       end
 
       # Returns control to EventMachine, and returns control to
