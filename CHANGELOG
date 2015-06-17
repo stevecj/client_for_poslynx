@@ -1,3 +1,8 @@
+Version 1.02
+- Raise more specific RequestAfterDetachedError exception when
+  a detached EM_Session attempts to send a request to the
+  POSLynx unit.
+
 Version 1.0.1
 - Allow nested calls to EM_Session#exec_dissociated
 
