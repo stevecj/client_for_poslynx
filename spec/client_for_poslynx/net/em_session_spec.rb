@@ -247,7 +247,7 @@ module ClientForPoslynx
           end
 
           expect( prev_on_failure ).to have_received( :call )
-          expect( exception ).to be_kind_of( Net::EM_Session::RequestError )
+          expect( exception ).to be_kind_of( Net::EM_Session::RequestAfterDetachedError )
         end
       end
     end

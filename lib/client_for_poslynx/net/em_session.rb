@@ -28,7 +28,11 @@ module ClientForPoslynx
       # Raised when attempting to make a request while another
       # session is waiting for a response to a request of the
       # same type (other than PinPadReset).
-      class ConflictingRequestError < Error ; end
+      class ConflictingRequestError < RequestError ; end
+
+      # Raised when a request is attempted from within a session
+      # that has been detached.
+      class RequestAfterDetachedError < RequestError ; end
 
       # Executes the given block in the context of a session
       # attached to the given Event Machine connector.  The
@@ -76,10 +80,11 @@ module ClientForPoslynx
       #
       # If another session attempts to supplant this request, but
       # the response to this request is subsequently received,
-      # then the response is returned as normal, but this
-      # session's status is changed to detached, and any
-      # subsequent request attempts made in this session will
-      # result in <tt>RequestError</tt> being raised.
+      # then the response is returned as normal, but the
+      # current session's status is also changed to detached, so
+      # any subsequent request attempts made in the session will
+      # result in <tt>RequestAfterDetachedError</tt> being
+      # raised.
       #
       # If another session is already waiting for a response,
       # then this will attempt to usurp or supplant the other
@@ -89,7 +94,8 @@ module ClientForPoslynx
       # exception.
       def request(data)
         if status == :detached
-          raise RequestError, "Session cannot make requests because it is detached"
+          msg = "Session cannot make requests because it is detached"
+          raise RequestAfterDetachedError, msg
         end
         if connector.request_pending?
           pending_request_data = connector.latest_request.request_data
@@ -98,7 +104,8 @@ module ClientForPoslynx
             pending_callbacks.call :on_failure
             was_successful, resp_data_or_ex = Fiber.yield( [:_get_response] )
           elsif data.class == pending_request_data.class
-            raise ConflictingRequestError, "Attempted a request while another request of the same type is in progress"
+            msg = "Attempted a request while another request of the same type is in progress"
+            raise ConflictingRequestError, msg
           else
             was_successful, resp_data_or_ex = Fiber.yield( [:_request, data, connector.latest_request] )
           end
