@@ -1,4 +1,9 @@
-Version 1.02
+Version 1.0.3
+- Remove TaxAmount from DebitCardSale request data model since
+  that element is only defined for credit card sales in the
+  Precidia XML API.
+
+Version 1.0.2
 - Raise more specific RequestAfterDetachedError exception when
   a detached EM_Session attempts to send a request to the
   POSLynx unit.
