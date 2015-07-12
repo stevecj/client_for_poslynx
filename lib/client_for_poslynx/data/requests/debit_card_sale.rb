@@ -12,7 +12,6 @@ module ClientForPoslynx
 
         attr_element_mapping attribute: :merchant_supplied_id, element: 'Id'
         attr_element_mapping attribute: :client_id,            element: 'ClientId'
-        attr_element_mapping attribute: :tax_amount,           element: 'TaxAmount'
         attr_element_mapping attribute: :amount,               element: 'Amount'
         attr_element_mapping attribute: :input_source,         element: 'Input'
         attr_element_mapping attribute: :track_2,              element: 'Track2'
